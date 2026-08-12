@@ -255,7 +255,7 @@ function Sync-ServerMods {
     }
     
     Write-Host "`n[*] Pulling mod binaries to $script:MinecraftMods..." -ForegroundColor Cyan
-    & $script:FeriumExe upgrade --output-dir "$script:MinecraftMods"
+    & $script:FeriumExe upgrade
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "`n[SUCCESS] Server mods successfully synchronized to $script:MinecraftMods!" -ForegroundColor Green
@@ -322,7 +322,7 @@ while ($true) {
         }
         "3" {
             Write-Host "`n[*] Checking for mod updates for profile [$script:ActiveProfile]..." -ForegroundColor Cyan
-            & $script:FeriumExe upgrade --output-dir "$script:MinecraftMods"
+            & $script:FeriumExe upgrade
             
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "`n[SUCCESS] Mods synchronized successfully to $script:MinecraftMods!" -ForegroundColor Green
