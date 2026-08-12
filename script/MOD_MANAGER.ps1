@@ -161,10 +161,34 @@ function Sync-ServerMods {
     & $script:FeriumExe upgrade --output-dir "$script:MinecraftMods"
     
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "`n[SUCCESS] Server mods successfully synchronized to .minecraft/mods!" -ForegroundColor Green
+        Write-Host "`n[SUCCESS] Server mods successfully synchronized to $script:MinecraftMods!" -ForegroundColor Green
     } else {
         Write-Host "`n[ERROR] Mod upgrade completed with warnings or non-zero exit code: $LASTEXITCODE" -ForegroundColor Yellow
     }
+}
+
+function Switch-ActiveProfile {
+    Write-Host "`n[*] Current Active Profile: [$script:ActiveProfile]" -ForegroundColor Cyan
+    Write-Host "[*] Current Target Path: $script:MinecraftMods" -ForegroundColor Gray
+    
+    $profiles = @($script:ConfigObj.profiles.PSObject.Properties.Name)
+    if ($profiles.Count -le 1) {
+        Write-Host "[*] Adding secondary 'main' profile to configuration..." -ForegroundColor Yellow
+        $script:ConfigObj.profiles | Add-Member -MemberType NoteProperty -Name "main" -Value "%APPDATA%\.minecraft\mods" -Force
+        $profiles = @($script:ConfigObj.profiles.PSObject.Properties.Name)
+    }
+    
+    $currentIndex = [array]::IndexOf($profiles, $script:ActiveProfile)
+    $nextIndex = ($currentIndex + 1) % $profiles.Count
+    $newProfile = $profiles[$nextIndex]
+    
+    $script:ConfigObj.active_profile = $newProfile
+    $jsonStr = $script:ConfigObj | ConvertTo-Json -Depth 5
+    Set-Content -Path $script:ConfigPath -Value $jsonStr -Force
+    
+    Get-ScriptConfig
+    Write-Host "`n[SUCCESS] Switched active profile to: [$script:ActiveProfile]" -ForegroundColor Green
+    Write-Host "[*] New Target Path: $script:MinecraftMods" -ForegroundColor Green
 }
 
 Set-Location -Path $script:FeriumDir
@@ -174,38 +198,42 @@ while ($true) {
     Clear-Host
     Write-Host "==========================================" -ForegroundColor Cyan
     Write-Host "     Ferium Mod Manager (Fabric 26.2)" -ForegroundColor Cyan
+    Write-Host "   Target: [$script:ActiveProfile] -> $script:MinecraftMods" -ForegroundColor DarkCyan
     Write-Host "==========================================" -ForegroundColor Cyan
     Write-Host "  1. ⚡ 1-Click Server Mod Sync (Auto-Fetch & Upgrade)" -ForegroundColor Green
-    Write-Host "  2. Upgrade / Sync Existing Mods" -ForegroundColor Yellow
-    Write-Host "  3. Add New Mod(s) [Batch Supported]" -ForegroundColor Yellow
-    Write-Host "  4. Add New Mod(s) AND Upgrade All" -ForegroundColor Yellow
-    Write-Host "  5. List Currently Tracked Mods" -ForegroundColor Yellow
-    Write-Host "  6. Remove a Tracked Mod" -ForegroundColor Red
-    Write-Host "  7. Add / Configure & Upgrade a Modpack" -ForegroundColor Magenta
-    Write-Host "  8. Scan Folder for Untracked Mods" -ForegroundColor Green
-    Write-Host "  9. Exit" -ForegroundColor Gray
+    Write-Host "  2. 🔄 Switch Target Instance Profile [$script:ActiveProfile]" -ForegroundColor Cyan
+    Write-Host "  3. Upgrade / Sync Existing Mods" -ForegroundColor Yellow
+    Write-Host "  4. Add New Mod(s) [Batch Supported]" -ForegroundColor Yellow
+    Write-Host "  5. Add New Mod(s) AND Upgrade All" -ForegroundColor Yellow
+    Write-Host "  6. List Currently Tracked Mods" -ForegroundColor Yellow
+    Write-Host "  7. Remove a Tracked Mod" -ForegroundColor Red
+    Write-Host "  8. Add / Configure & Upgrade a Modpack" -ForegroundColor Magenta
+    Write-Host "  9. Scan Folder for Untracked Mods" -ForegroundColor Green
+    Write-Host " 10. Exit" -ForegroundColor Gray
     Write-Host "==========================================" -ForegroundColor Cyan
 
-    $choice = Read-Host "`nSelect an option (1-9)"
+    $choice = Read-Host "`nSelect an option (1-10)"
 
     switch ($choice) {
         "1" {
             Sync-ServerMods
         }
         "2" {
-            Write-Host "`n[*] Checking for mod updates..." -ForegroundColor Cyan
-            & $script:FeriumExe upgrade
+            Switch-ActiveProfile
+        }
+        "3" {
+            Write-Host "`n[*] Checking for mod updates for profile [$script:ActiveProfile]..." -ForegroundColor Cyan
+            & $script:FeriumExe upgrade --output-dir "$script:MinecraftMods"
             
             if ($LASTEXITCODE -eq 0) {
-                Write-Host "`n[SUCCESS] Mods synchronized successfully!" -ForegroundColor Green
+                Write-Host "`n[SUCCESS] Mods synchronized successfully to $script:MinecraftMods!" -ForegroundColor Green
             } else {
                 Write-Host "`n[ERROR] Upgrade failed with Exit Code: $LASTEXITCODE. Review the Ferium output above." -ForegroundColor Red
             }
         }
-        "3" {
+        "4" {
             $inputString = (Read-Host "`nEnter Modrinth slugs or CF IDs (separate by space or comma)").Trim()
             if (-not [string]::IsNullOrWhiteSpace($inputString)) {
-                # Split by space or comma and filter out empty strings
                 $mods = $inputString -split '[\s,]+' | Where-Object { $_ -match '\S' }
                 
                 foreach ($mod in $mods) {
@@ -218,12 +246,12 @@ while ($true) {
                         Write-Host "[ERROR] Failed to add '$mod'. Verify the slug or ID." -ForegroundColor Red
                     }
                 }
-                Write-Host "`n[*] Batch operation complete. Run Option 1 or 2 to pull the binaries." -ForegroundColor Yellow
+                Write-Host "`n[*] Batch operation complete. Run Option 1 or 3 to pull the binaries." -ForegroundColor Yellow
             } else {
                 Write-Host "`n[WARNING] Empty input detected. Operation cancelled." -ForegroundColor Yellow
             }
         }
-        "4" {
+        "5" {
             $inputString = (Read-Host "`nEnter Modrinth slugs or CF IDs (separate by space or comma)").Trim()
             if (-not [string]::IsNullOrWhiteSpace($inputString)) {
                 $mods = $inputString -split '[\s,]+' | Where-Object { $_ -match '\S' }
@@ -243,8 +271,8 @@ while ($true) {
                 
                 if ($successCount -gt 0) {
                     Write-Host "`n[*] Upgrading repository..." -ForegroundColor Cyan
-                    & $script:FeriumExe upgrade
-                    Write-Host "`n[SUCCESS] Profile synchronized!" -ForegroundColor Green
+                    & $script:FeriumExe upgrade --output-dir "$script:MinecraftMods"
+                    Write-Host "`n[SUCCESS] Profile synchronized to $script:MinecraftMods!" -ForegroundColor Green
                 } else {
                     Write-Host "`n[ERROR] No mods were successfully added. Aborting upgrade sequence." -ForegroundColor Red
                 }
@@ -252,11 +280,11 @@ while ($true) {
                 Write-Host "`n[WARNING] Empty input detected. Operation cancelled." -ForegroundColor Yellow
             }
         }
-        "5" {
+        "6" {
             Write-Host "`n[*] Active Mod Profile:" -ForegroundColor Cyan
             & $script:FeriumExe list
         }
-        "6" {
+        "7" {
             Write-Host "`n[*] Active Mod Profile:" -ForegroundColor Cyan
             & $script:FeriumExe list
             
@@ -274,16 +302,16 @@ while ($true) {
                 Write-Host "`n[WARNING] Empty input detected. Operation cancelled." -ForegroundColor Yellow
             }
         }
-        "7" {
+        "8" {
             $packSlug = (Read-Host "`nEnter Modrinth slug or CurseForge ID for the MODPACK").Trim()
             if (-not [string]::IsNullOrWhiteSpace($packSlug)) {
                 Write-Host "`n[*] Processing Modpack: '$packSlug'..." -ForegroundColor Cyan
                 
-                & $script:FeriumExe modpack add $packSlug --output-dir $MinecraftRoot
+                & $script:FeriumExe modpack add $packSlug --output-dir $script:MinecraftRoot
                 
                 if ($LASTEXITCODE -ne 0) {
-                    Write-Host "`n[*] Modpack may already be tracked. Enforcing directory configuration to '$MinecraftRoot'..." -ForegroundColor Yellow
-                    & $script:FeriumExe modpack configure --output-dir $MinecraftRoot
+                    Write-Host "`n[*] Modpack may already be tracked. Enforcing directory configuration to '$script:MinecraftRoot'..." -ForegroundColor Yellow
+                    & $script:FeriumExe modpack configure --output-dir $script:MinecraftRoot
                 }
 
                 Write-Host "`n[*] Pulling modpack components..." -ForegroundColor Cyan
@@ -298,23 +326,23 @@ while ($true) {
                 Write-Host "`n[WARNING] Empty input detected. Operation cancelled." -ForegroundColor Yellow
             }
         }
-        "8" {
+        "9" {
             Write-Host "`n[*] Scanning the mods directory for untracked .jar files..." -ForegroundColor Cyan
             & $script:FeriumExe scan
             
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "`n[SUCCESS] Untracked mods successfully identified and added to the Ferium profile!" -ForegroundColor Green
-                Write-Host "Run Option 1 or 2 (Upgrade) to verify and sync them moving forward." -ForegroundColor Yellow
+                Write-Host "Run Option 1 or 3 (Upgrade) to verify and sync them moving forward." -ForegroundColor Yellow
             } else {
                 Write-Host "`n[ERROR] The scan encountered an issue. Review the console trace." -ForegroundColor Red
             }
         }
-        "9" {
+        "10" {
             Write-Host "`nTerminating session..." -ForegroundColor Gray
             break
         }
         Default {
-            Write-Host "`n[ERROR] Invalid selection. Awaiting input between 1 and 9." -ForegroundColor Red
+            Write-Host "`n[ERROR] Invalid selection. Awaiting input between 1 and 10." -ForegroundColor Red
         }
     }
     
