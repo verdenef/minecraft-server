@@ -48,6 +48,65 @@ function Ensure-FeriumInstalled {
 
 Ensure-FeriumInstalled
 
+function Get-ModManifest {
+    $content = ""
+    if (-not [string]::IsNullOrWhiteSpace($script:ManifestUrl)) {
+        try {
+            Write-Host "[*] Fetching remote server mod manifest from URL..." -ForegroundColor Cyan
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            $content = Invoke-RestMethod -Uri $script:ManifestUrl -UseBasicParsing
+        } catch {
+            Write-Host "[WARNING] Failed to fetch remote manifest from $script:ManifestUrl : $_" -ForegroundColor Yellow
+        }
+    }
+    
+    if ([string]::IsNullOrWhiteSpace($content)) {
+        $localManifest = Join-Path -Path $PSScriptRoot -ChildPath "server-mods.txt"
+        if (-not (Test-Path -Path $localManifest)) {
+            $localManifest = "server-mods.txt"
+        }
+        
+        if (Test-Path -Path $localManifest) {
+            Write-Host "[*] Reading local manifest from $localManifest..." -ForegroundColor Cyan
+            $content = Get-Content -Path $localManifest -Raw
+        } else {
+            Write-Host "[ERROR] No remote URL configured and local server-mods.txt not found!" -ForegroundColor Red
+            return @()
+        }
+    }
+    
+    $mods = $content -split '[\r\n]+' | Where-Object { 
+        $line = $_.Trim()
+        $line -and -not $line.StartsWith("#")
+    }
+    return $mods
+}
+
+function Sync-ServerMods {
+    Write-Host "`n[*] Starting Server Mod Synchronization..." -ForegroundColor Cyan
+    $mods = Get-ModManifest
+    
+    if ($mods.Count -eq 0) {
+        Write-Host "[WARNING] No mods found in manifest to sync." -ForegroundColor Yellow
+        return
+    }
+    
+    Write-Host "[*] Registering $($mods.Count) mods into Ferium profile..." -ForegroundColor Cyan
+    foreach ($mod in $mods) {
+        Write-Host " -> Adding '$mod'..." -ForegroundColor Gray
+        & $script:FeriumExe add $mod | Out-Null
+    }
+    
+    Write-Host "`n[*] Pulling mod binaries to $script:MinecraftMods..." -ForegroundColor Cyan
+    & $script:FeriumExe upgrade --output-dir "$script:MinecraftMods"
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "`n[SUCCESS] Server mods successfully synchronized to .minecraft/mods!" -ForegroundColor Green
+    } else {
+        Write-Host "`n[ERROR] Mod upgrade completed with warnings or non-zero exit code: $LASTEXITCODE" -ForegroundColor Yellow
+    }
+}
+
 Set-Location -Path $script:FeriumDir
 
 # 2. Main Execution Loop
@@ -56,20 +115,24 @@ while ($true) {
     Write-Host "==========================================" -ForegroundColor Cyan
     Write-Host "     Ferium Mod Manager (Fabric 26.2)" -ForegroundColor Cyan
     Write-Host "==========================================" -ForegroundColor Cyan
-    Write-Host "  1. Upgrade / Sync Existing Mods" -ForegroundColor Yellow
-    Write-Host "  2. Add New Mod(s) [Batch Supported]" -ForegroundColor Yellow
-    Write-Host "  3. Add New Mod(s) AND Upgrade All" -ForegroundColor Yellow
-    Write-Host "  4. List Currently Tracked Mods" -ForegroundColor Yellow
-    Write-Host "  5. Remove a Tracked Mod" -ForegroundColor Red
-    Write-Host "  6. Add / Configure & Upgrade a Modpack" -ForegroundColor Magenta
-    Write-Host "  7. Scan Folder for Untracked Mods" -ForegroundColor Green
-    Write-Host "  8. Exit" -ForegroundColor Gray
+    Write-Host "  1. ⚡ 1-Click Server Mod Sync (Auto-Fetch & Upgrade)" -ForegroundColor Green
+    Write-Host "  2. Upgrade / Sync Existing Mods" -ForegroundColor Yellow
+    Write-Host "  3. Add New Mod(s) [Batch Supported]" -ForegroundColor Yellow
+    Write-Host "  4. Add New Mod(s) AND Upgrade All" -ForegroundColor Yellow
+    Write-Host "  5. List Currently Tracked Mods" -ForegroundColor Yellow
+    Write-Host "  6. Remove a Tracked Mod" -ForegroundColor Red
+    Write-Host "  7. Add / Configure & Upgrade a Modpack" -ForegroundColor Magenta
+    Write-Host "  8. Scan Folder for Untracked Mods" -ForegroundColor Green
+    Write-Host "  9. Exit" -ForegroundColor Gray
     Write-Host "==========================================" -ForegroundColor Cyan
 
-    $choice = Read-Host "`nSelect an option (1-8)"
+    $choice = Read-Host "`nSelect an option (1-9)"
 
     switch ($choice) {
         "1" {
+            Sync-ServerMods
+        }
+        "2" {
             Write-Host "`n[*] Checking for mod updates..." -ForegroundColor Cyan
             & $FeriumExe upgrade
             
@@ -79,7 +142,7 @@ while ($true) {
                 Write-Host "`n[ERROR] Upgrade failed with Exit Code: $LASTEXITCODE. Review the Ferium output above." -ForegroundColor Red
             }
         }
-        "2" {
+        "3" {
             $inputString = (Read-Host "`nEnter Modrinth slugs or CF IDs (separate by space or comma)").Trim()
             if (-not [string]::IsNullOrWhiteSpace($inputString)) {
                 # Split by space or comma and filter out empty strings
@@ -95,12 +158,12 @@ while ($true) {
                         Write-Host "[ERROR] Failed to add '$mod'. Verify the slug or ID." -ForegroundColor Red
                     }
                 }
-                Write-Host "`n[*] Batch operation complete. Run Option 1 to pull the binaries." -ForegroundColor Yellow
+                Write-Host "`n[*] Batch operation complete. Run Option 1 or 2 to pull the binaries." -ForegroundColor Yellow
             } else {
                 Write-Host "`n[WARNING] Empty input detected. Operation cancelled." -ForegroundColor Yellow
             }
         }
-        "3" {
+        "4" {
             $inputString = (Read-Host "`nEnter Modrinth slugs or CF IDs (separate by space or comma)").Trim()
             if (-not [string]::IsNullOrWhiteSpace($inputString)) {
                 $mods = $inputString -split '[\s,]+' | Where-Object { $_ -match '\S' }
@@ -129,11 +192,11 @@ while ($true) {
                 Write-Host "`n[WARNING] Empty input detected. Operation cancelled." -ForegroundColor Yellow
             }
         }
-        "4" {
+        "5" {
             Write-Host "`n[*] Active Mod Profile:" -ForegroundColor Cyan
             & $FeriumExe list
         }
-        "5" {
+        "6" {
             Write-Host "`n[*] Active Mod Profile:" -ForegroundColor Cyan
             & $FeriumExe list
             
@@ -151,7 +214,7 @@ while ($true) {
                 Write-Host "`n[WARNING] Empty input detected. Operation cancelled." -ForegroundColor Yellow
             }
         }
-        "6" {
+        "7" {
             $packSlug = (Read-Host "`nEnter Modrinth slug or CurseForge ID for the MODPACK").Trim()
             if (-not [string]::IsNullOrWhiteSpace($packSlug)) {
                 Write-Host "`n[*] Processing Modpack: '$packSlug'..." -ForegroundColor Cyan
@@ -175,23 +238,23 @@ while ($true) {
                 Write-Host "`n[WARNING] Empty input detected. Operation cancelled." -ForegroundColor Yellow
             }
         }
-        "7" {
+        "8" {
             Write-Host "`n[*] Scanning the mods directory for untracked .jar files..." -ForegroundColor Cyan
             & $FeriumExe scan
             
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "`n[SUCCESS] Untracked mods successfully identified and added to the Ferium profile!" -ForegroundColor Green
-                Write-Host "Run Option 1 (Upgrade) to verify and sync them moving forward." -ForegroundColor Yellow
+                Write-Host "Run Option 1 or 2 (Upgrade) to verify and sync them moving forward." -ForegroundColor Yellow
             } else {
                 Write-Host "`n[ERROR] The scan encountered an issue. Review the console trace." -ForegroundColor Red
             }
         }
-        "8" {
+        "9" {
             Write-Host "`nTerminating session..." -ForegroundColor Gray
             break
         }
         Default {
-            Write-Host "`n[ERROR] Invalid selection. Awaiting input between 1 and 8." -ForegroundColor Red
+            Write-Host "`n[ERROR] Invalid selection. Awaiting input between 1 and 9." -ForegroundColor Red
         }
     }
     
