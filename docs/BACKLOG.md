@@ -20,7 +20,8 @@ This document tracks completed features, active tasks, and proposed improvements
 
 ## ✅ Completed Tasks
 
-- [x] **Ferium CLI Profile Synchronization**: Implemented `Ensure-FeriumProfile` to automatically sync script profile switching (`server` vs `main`) with Ferium CLI's internal profiles via `ferium profile list`, `profile create`, `profile switch`, and `profile configure --output-dir <path>`.
+- [x] **Per-Profile Minecraft Version & Loader Configuration**: Added per-profile `mc_version` and `mod_loader` configuration in `config.json` with Option 10 (`Set-InstanceSettings`). Automatically configures Ferium CLI for the active instance's targeted game version and mod loader.
+- [x] **Ferium CLI Profile Synchronization**: Implemented `Ensure-FeriumProfile` to automatically sync script profile switching (`server` vs `main`) with Ferium CLI's internal profiles via `ferium profile list`, `profile create`, `profile switch`, and `profile configure`.
 - [x] **Multi-Instance Config & Profile Switcher**: Added `Get-ScriptConfig` and `Switch-ActiveProfile` (Option 2) with git-ignored `config.json` support. Allows seamlessly toggling between server instances (`.../instances/64290aca.../mods`) and main singleplayer instances (`.minecraft/mods`).
 - [x] **1-Click Remote/Local Manifest Sync**: Implemented Option 1 `Sync-ServerMods` to auto-fetch server mod list from remote Gist/URL or local `server-mods.txt` and upgrade directly to target mods directory.
 - [x] **Ferium Auto-Bootstrapper**: Dynamic binary resolution in `$env:LOCALAPPDATA\Ferium\ferium.exe` with automatic GitHub release zip downloading if missing.
