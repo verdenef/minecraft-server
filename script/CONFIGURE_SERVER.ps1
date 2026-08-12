@@ -70,25 +70,103 @@ Write-Host " -> Tree Harvester config updated (instant leaf decay enabled)!" -Fo
 
 # ------------------------------------------------------------------------------
 # 4. Server-Side Horror (config/serversidehorror.json)
+# Note: Lower chance number = occurs more frequently. Set *_enable to $true/$false.
 # ------------------------------------------------------------------------------
 $horrorConfig = Join-Path -Path $configDir -ChildPath "serversidehorror.json"
-if (Test-Path -Path $horrorConfig) {
-    try {
-        $hObj = Get-Content -Path $horrorConfig -Raw | ConvertFrom-Json
-        $hObj.heads_from_list_enable = $false
-        $hObj.random_heads_enable = $false
-        $hObj.starer_list = @("Herobrine")
-        $hObj.fake_steps_chance = 150000
-        $hObj.fake_mining_chance = 150000
-        $hObj.scary_sound_chance = 250000
-        $hObj.random_signs_texts = @("TABANGI KO", "YAWAAAAAA", "nay iro mamatay unya", "james biot", "ben opaw")
-        $hObj.random_fake_joiner_list = @("Herobrine;ReneBaterbonia")
-        $hObj | ConvertTo-Json -Depth 10 | Set-Content -Path $horrorConfig -Encoding UTF8
-        Write-Host " -> Server-Side Horror config updated (custom signs & Herobrine)!" -ForegroundColor Green
-    } catch {
-        Write-Host "[WARNING] Could not parse serversidehorror.json: $_" -ForegroundColor Yellow
-    }
+
+$horrorObj = [ordered]@{
+    "grace_period"                       = 3
+    "grace_period_applies_to_traps"      = $false
+
+    # Ghost Starers
+    "herobrine_starer_enable"            = $true
+    "herobrine_starer_chance"            = 120000
+    "starer_enable"                      = $true
+    "starer_chance"                      = 420000
+    "starer_list"                        = @("Herobrine")
+
+    # Jumpscares
+    "jumpscare_enable"                   = $true
+    "jumpscare_chance"                   = 1080000
+
+    # Fake Joiners
+    "fake_joiner_enable"                 = $true
+    "fake_joiner_chance"                 = 720000
+    "random_fake_joiner_enable"          = $true
+    "random_fake_joiner_chance"          = 720000
+    "random_fake_joiner_list"            = @("Herobrine;ReneBaterbonia")
+
+    # Audio & Ambient Scares
+    "fake_steps_enable"                  = $true
+    "fake_steps_chance"                  = 150000
+    "fake_mining_enable"                 = $true
+    "fake_mining_chance"                 = 150000
+    "scary_sound_enable"                 = $true
+    "scary_sound_chance"                 = 250000
+    "scary_sound_list"                   = @(
+        "minecraft:block.bell.resonate",
+        "minecraft:block.bell.use",
+        "minecraft:entity.tnt.primed",
+        "minecraft:entity.generic.explode",
+        "minecraft:entity.creeper.primed",
+        "minecraft:entity.arrow.hit",
+        "minecraft:item.trident.hit_ground",
+        "minecraft:entity.polar_bear.ambient",
+        "minecraft:entity.polar_bear.ambient_baby",
+        "minecraft:item.crossbow.hit",
+        "minecraft:entity.polar_bear.death",
+        "minecraft:entity.polar_bear.warning",
+        "minecraft:entity.dragon_fireball.explode",
+        "minecraft:entity.splash_potion.break",
+        "minecraft:entity.ghast.scream",
+        "minecraft:entity.allay.death"
+    )
+
+    # Creepy Signs
+    "random_signs_enable"                = $true
+    "random_signs_chance"                = 500000
+    "random_signs_texts"                 = @("TABANGI KO", "YAWAAAAAA", "nay iro mamatay unya", "james biot", "ben opaw")
+
+    # Torch Breaking & Modification
+    "break_torches_enable"               = $true
+    "break_torches_chance"               = 720000
+    "replace_torches_enable"             = $true
+    "replace_torches_chance"             = 720000
+
+    # Weather & Night Length
+    "random_lightning_enable"            = $true
+    "random_lightning_chance"            = 1800000
+    "long_night_enable"                  = $true
+    "long_night_chance"                  = 75
+
+    # Traps & Dungeon Spawns
+    "setting_up_new_traps_enable"        = $true
+    "setting_up_new_traps_chance"        = 1500000
+    "traps_enable"                       = $true
+    "joining_in_dungeon_enable"          = $true
+    "joining_in_dungeon_chance"          = 140
+
+    # High-Risk / Destructive Features (Disabled by Default)
+    "burn_down_house_enable"             = $false
+    "burn_down_house_chance_per_wake_up" = 100
+    "joining_on_bedrock_enable"          = $false
+    "joining_on_bedrock_chance"          = 70
+    "removing_leaves_enable"             = $false
+    "removing_leaves_chance"             = 2000000
+
+    # Player Heads (Disabled as requested)
+    "heads_from_list_enable"             = $false
+    "heads_from_list_chance"             = 800000
+    "heads_from_list_list"               = @("Herobrine")
+    "random_heads_enable"                = $false
+    "random_heads_chance"                = 800000
+
+    # World Generation Features
+    "old_villages_enable"                = $true
 }
+
+$horrorObj | ConvertTo-Json -Depth 10 | Set-Content -Path $horrorConfig -Encoding UTF8
+Write-Host " -> Server-Side Horror config updated (all features & chances explicitly listed)!" -ForegroundColor Green
 
 # ------------------------------------------------------------------------------
 # 5. Simple Voice Chat (config/voicechat/voicechat-server.properties)
