@@ -9,8 +9,18 @@
 # 1. Environment Setup & Validation
 $script:FeriumDir = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Ferium"
 $script:FeriumExe = Join-Path -Path $script:FeriumDir -ChildPath "ferium.exe"
-$script:MinecraftRoot = "$env:APPDATA\.minecraft"
-$script:MinecraftMods = "$env:APPDATA\.minecraft\mods"
+
+# Custom Instance Directory Override (leave empty to default to standard .minecraft)
+# Set your server instance path below or leave empty for default .minecraft
+$script:InstanceDir = "C:\Users\Red\AppData\Roaming\.minecraft\instances\64290aca06184fb6b59be8d2ef380ff5"
+
+if (-not [string]::IsNullOrWhiteSpace($script:InstanceDir) -and (Test-Path -Path $script:InstanceDir)) {
+    $script:MinecraftRoot = $script:InstanceDir
+    $script:MinecraftMods = Join-Path -Path $script:InstanceDir -ChildPath "mods"
+} else {
+    $script:MinecraftRoot = "$env:APPDATA\.minecraft"
+    $script:MinecraftMods = "$env:APPDATA\.minecraft\mods"
+}
 
 # Configurable remote manifest URL (e.g. GitHub Gist raw URL)
 $script:ManifestUrl = ""
@@ -95,6 +105,12 @@ function Get-ModManifest {
 
 function Sync-ServerMods {
     Write-Host "`n[*] Starting Server Mod Synchronization..." -ForegroundColor Cyan
+    Write-Host "[*] Target Mods Directory: $script:MinecraftMods" -ForegroundColor Gray
+    
+    if (-not (Test-Path -Path $script:MinecraftMods)) {
+        New-Item -ItemType Directory -Path $script:MinecraftMods -Force | Out-Null
+    }
+    
     $mods = Get-ModManifest
     
     if ($mods.Count -eq 0) {
