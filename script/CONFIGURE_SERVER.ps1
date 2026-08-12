@@ -296,10 +296,11 @@ $mcmeta = @'
   }
 }
 '@
-$mcmeta | Set-Content -Path (Join-Path -Path $dpDir -ChildPath "pack.mcmeta") -Encoding UTF8
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
-'{"values": ["server_guide:load"]}' | Set-Content -Path (Join-Path -Path $dpData -ChildPath "minecraft\tags\function\load.json") -Encoding UTF8
-'{"values": ["server_guide:tick"]}' | Set-Content -Path (Join-Path -Path $dpData -ChildPath "minecraft\tags\function\tick.json") -Encoding UTF8
+[System.IO.File]::WriteAllText((Join-Path -Path $dpDir -ChildPath "pack.mcmeta"), $mcmeta, $utf8NoBom)
+[System.IO.File]::WriteAllText((Join-Path -Path $dpData -ChildPath "minecraft\tags\function\load.json"), '{"values": ["server_guide:load"]}', $utf8NoBom)
+[System.IO.File]::WriteAllText((Join-Path -Path $dpData -ChildPath "minecraft\tags\function\tick.json"), '{"values": ["server_guide:tick"]}', $utf8NoBom)
 
 $loadMc = @'
 scoreboard objectives add show_guide trigger "Show Server Guide"
@@ -307,7 +308,7 @@ scoreboard objectives add guide_timer dummy "Guide Timer"
 scoreboard objectives add tip_index dummy "Tip Index"
 tellraw @a [{"text":"[Server] ","color":"gold","bold":true},{"text":"Interactive Welcome Guide & 5-Min Tip Broadcaster Loaded!","color":"green"}]
 '@
-$loadMc | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\function\load.mcfunction") -Encoding UTF8
+[System.IO.File]::WriteAllText((Join-Path -Path $dpData -ChildPath "server_guide\function\load.mcfunction"), $loadMc, $utf8NoBom)
 
 $tickMc = @'
 scoreboard players enable @a show_guide
@@ -316,7 +317,7 @@ execute as @a[scores={show_guide=1..}] run function server_guide:send_guide
 scoreboard players add #server guide_timer 1
 execute if score #server guide_timer matches 6000.. run function server_guide:broadcast_tip
 '@
-$tickMc | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\function\tick.mcfunction") -Encoding UTF8
+[System.IO.File]::WriteAllText((Join-Path -Path $dpData -ChildPath "server_guide\function\tick.mcfunction"), $tickMc, $utf8NoBom)
 
 $broadcastMc = @'
 scoreboard players set #server guide_timer 0
@@ -341,14 +342,14 @@ execute if score #server tip_index matches 5 run tellraw @a ["",{"text":"[TIP] "
 # Tip 6: Keybinds & Navigation
 execute if score #server tip_index matches 6 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Controls: [J] Map | [B] Waypoint | [G] Fullbright | [C] Zoom | [F4] Freecam | [V] Voice Chat. Type ","color":"yellow"},{"text":"/trigger show_guide","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger show_guide"}},{"text":" for full guide!","color":"yellow"}]
 '@
-$broadcastMc | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\function\broadcast_tip.mcfunction") -Encoding UTF8
+[System.IO.File]::WriteAllText((Join-Path -Path $dpData -ChildPath "server_guide\function\broadcast_tip.mcfunction"), $broadcastMc, $utf8NoBom)
 
 $sendGuideMc = @'
 tellraw @s ["",{"text":"==================================================\n","color":"gold","bold":true},{"text":"        Welcome to Hustisya Para Kay Rene SMP!\n","color":"gold","bold":true},{"text":"==================================================\n","color":"gold","bold":true},{"text":" [Skins]          : ","color":"yellow","bold":true},{"text":"/skin set <SkinName>  ","color":"gray"},{"text":"[Click to Set Skin]\n","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/skin set "},"hoverEvent":{"action":"show_text","contents":"Click to open /skin command"}},{"text":" [Nicknames]      : ","color":"yellow","bold":true},{"text":"/nick set &aName ","color":"gray"},{"text":"[Click to Set Color]\n","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/nick set &a"},"hoverEvent":{"action":"show_text","contents":"Click to open /nick command"}},{"text":" [Universal Grave]: ","color":"yellow","bold":true},{"text":"30-min item protection on death (1-tap retrieval)\n","color":"gray"},{"text":" [Tree Harvester] : ","color":"yellow","bold":true},{"text":"Break bottom log to chop & decay leaves\n","color":"gray"},{"text":" [1-Player Sleep] : ","color":"yellow","bold":true},{"text":"Only 1 player needed to skip the night\n","color":"gray"},{"text":" [Shulker Open]   : ","color":"yellow","bold":true},{"text":"Right-click shulker in inventory | Shift to preview\n","color":"gray"},{"text":" [JourneyMap]     : ","color":"yellow","bold":true},{"text":"[J] Full Map | [B] Waypoints | [Ctrl+B] Quick Pin\n","color":"gray"},{"text":" [Utility Keys]   : ","color":"yellow","bold":true},{"text":"[G] Fullbright | [C] Zoom | [F4] Freecam | [V] Voice\n","color":"gray"},{"text":"==================================================\n","color":"gold","bold":true},{"text":"  Type ","color":"gray"},{"text":"/trigger show_guide","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger show_guide"},"hoverEvent":{"action":"show_text","contents":"Click to re-open guide"}},{"text":" anytime in chat to re-open this guide!\n","color":"gray"},{"text":"==================================================","color":"gold","bold":true}]
 scoreboard players reset @s show_guide
 advancement revoke @s only server_guide:player_joined
 '@
-$sendGuideMc | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\function\send_guide.mcfunction") -Encoding UTF8
+[System.IO.File]::WriteAllText((Join-Path -Path $dpData -ChildPath "server_guide\function\send_guide.mcfunction"), $sendGuideMc, $utf8NoBom)
 
 $playerJoinedAdv = @'
 {
@@ -362,9 +363,9 @@ $playerJoinedAdv = @'
   }
 }
 '@
-$playerJoinedAdv | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\advancement\player_joined.json") -Encoding UTF8
+[System.IO.File]::WriteAllText((Join-Path -Path $dpData -ChildPath "server_guide\advancement\player_joined.json"), $playerJoinedAdv, $utf8NoBom)
 
-Write-Host " -> Interactive Welcome Guide Datapack installed & configured!" -ForegroundColor Green
+Write-Host " -> Interactive Welcome Guide Datapack installed & configured (UTF-8 No BOM)!" -ForegroundColor Green
 
 Write-Host "`n[SUCCESS] Minecraft Server & Mod Configuration complete!" -ForegroundColor Green
 Write-Host ""
