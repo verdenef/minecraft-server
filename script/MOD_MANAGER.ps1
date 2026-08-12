@@ -27,8 +27,16 @@ function Get-ScriptConfig {
         $defaultConfig = [ordered]@{
             active_profile = "server"
             profiles = [ordered]@{
-                server = "C:\Users\Red\AppData\Roaming\.minecraft\instances\64290aca06184fb6b59be8d2ef380ff5\mods"
-                main = "%APPDATA%\.minecraft\mods"
+                server = [ordered]@{
+                    path = "C:\Users\Red\AppData\Roaming\.minecraft\instances\64290aca06184fb6b59be8d2ef380ff5\mods"
+                    mc_version = "26.2"
+                    mod_loader = "fabric"
+                }
+                main = [ordered]@{
+                    path = "%APPDATA%\.minecraft\mods"
+                    mc_version = "26.2"
+                    mod_loader = "fabric"
+                }
             }
         }
         $jsonStr = $defaultConfig | ConvertTo-Json -Depth 5
@@ -40,19 +48,68 @@ function Get-ScriptConfig {
         $script:ConfigObj = $rawJson | ConvertFrom-Json
         $script:ActiveProfile = $script:ConfigObj.active_profile
         
-        $profileMods = $script:ConfigObj.profiles.PSObject.Properties[$script:ActiveProfile].Value
-        if (-not [string]::IsNullOrWhiteSpace($profileMods)) {
-            $script:MinecraftMods = [System.Environment]::ExpandEnvironmentVariables($profileMods)
+        $profileData = $script:ConfigObj.profiles.PSObject.Properties[$script:ActiveProfile].Value
+        
+        if ($profileData -is [string]) {
+            # Legacy string path fallback
+            $script:MinecraftMods = [System.Environment]::ExpandEnvironmentVariables($profileData)
+            $script:ActiveMcVersion = "26.2"
+            $script:ActiveModLoader = "fabric"
+        } elseif ($null -ne $profileData) {
+            $script:MinecraftMods = [System.Environment]::ExpandEnvironmentVariables($profileData.path)
+            $script:ActiveMcVersion = if (-not [string]::IsNullOrWhiteSpace($profileData.mc_version)) { $profileData.mc_version } else { "26.2" }
+            $script:ActiveModLoader = if (-not [string]::IsNullOrWhiteSpace($profileData.mod_loader)) { $profileData.mod_loader } else { "fabric" }
         } else {
             $script:MinecraftMods = "$env:APPDATA\.minecraft\mods"
+            $script:ActiveMcVersion = "26.2"
+            $script:ActiveModLoader = "fabric"
         }
     } catch {
-        Write-Host "[WARNING] Failed to parse config.json. Using fallback .minecraft\mods" -ForegroundColor Yellow
+        Write-Host "[WARNING] Failed to parse config.json. Using fallback defaults." -ForegroundColor Yellow
         $script:ActiveProfile = "main"
         $script:MinecraftMods = "$env:APPDATA\.minecraft\mods"
+        $script:ActiveMcVersion = "26.2"
+        $script:ActiveModLoader = "fabric"
     }
     
     Ensure-FeriumProfile
+}
+
+function Set-InstanceSettings {
+    Write-Host "`n[*] Configuring Instance Profile: [$script:ActiveProfile]" -ForegroundColor Cyan
+    Write-Host "[*] Current Target Path: $script:MinecraftMods" -ForegroundColor Gray
+    Write-Host "[*] Current MC Version : $script:ActiveMcVersion" -ForegroundColor Gray
+    Write-Host "[*] Current Mod Loader : $script:ActiveModLoader" -ForegroundColor Gray
+    
+    $newVersion = (Read-Host "`nEnter Minecraft Version (press Enter to keep '$script:ActiveMcVersion')").Trim()
+    if ([string]::IsNullOrWhiteSpace($newVersion)) {
+        $newVersion = $script:ActiveMcVersion
+    }
+    
+    $newLoader = (Read-Host "Enter Mod Loader [fabric/quilt/forge/neo-forge] (press Enter to keep '$script:ActiveModLoader')").Trim().ToLower()
+    if ([string]::IsNullOrWhiteSpace($newLoader)) {
+        $newLoader = $script:ActiveModLoader
+    }
+    
+    $currentVal = $script:ConfigObj.profiles.PSObject.Properties[$script:ActiveProfile].Value
+    if ($currentVal -is [string]) {
+        $newObj = [ordered]@{
+            path = $currentVal
+            mc_version = $newVersion
+            mod_loader = $newLoader
+        }
+        $script:ConfigObj.profiles.PSObject.Properties[$script:ActiveProfile].Value = $newObj
+    } else {
+        $currentVal.mc_version = $newVersion
+        $currentVal.mod_loader = $newLoader
+    }
+    
+    $jsonStr = $script:ConfigObj | ConvertTo-Json -Depth 5
+    Set-Content -Path $script:ConfigPath -Value $jsonStr -Force
+    
+    Get-ScriptConfig
+    Write-Host "`n[SUCCESS] Updated settings for profile [$script:ActiveProfile]!" -ForegroundColor Green
+    Write-Host "[*] MC Version: $script:ActiveMcVersion | Mod Loader: $script:ActiveModLoader" -ForegroundColor Green
 }
 
 function Ensure-FeriumProfile {
