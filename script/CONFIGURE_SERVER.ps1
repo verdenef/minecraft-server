@@ -236,6 +236,34 @@ $styleObj = [ordered]@{
 $styleObj | ConvertTo-Json -Depth 5 | Set-Content -Path $defaultStyle -Encoding UTF8
 Write-Host " -> Styled Player List config updated (header, footer, deaths, playtime & ping in ms)!" -ForegroundColor Green
 
+# ------------------------------------------------------------------------------
+# 7. Styled Nicknames (config/styled-nicknames.json)
+# ------------------------------------------------------------------------------
+$nickConfig = Join-Path -Path $configDir -ChildPath "styled-nicknames.json"
+if (Test-Path -Path $nickConfig) {
+    try {
+        $nObj = Get-Content -Path $nickConfig -Raw | ConvertFrom-Json
+        $nObj.allowByDefault = $true
+        $nObj.changeDisplayName = $true
+        $nObj.changePlayerListName = $true
+        $nObj.allowLegacyFormatting = $true
+        $nObj.nicknameFormat = "${nickname}"
+        $nObj.nicknameFormatColor = "${nickname}"
+        if ($null -ne $nObj.defaultEnabledFormatting) {
+            $nObj.defaultEnabledFormatting.color = $true
+            $nObj.defaultEnabledFormatting.gradient = $true
+            $nObj.defaultEnabledFormatting.rainbow = $true
+            $nObj.defaultEnabledFormatting.bold = $true
+            $nObj.defaultEnabledFormatting.italic = $true
+            $nObj.defaultEnabledFormatting.underline = $true
+        }
+        $nObj | ConvertTo-Json -Depth 10 | Set-Content -Path $nickConfig -Encoding UTF8
+        Write-Host " -> Styled Nicknames config updated (colors, gradients & TAB list sync enabled)!" -ForegroundColor Green
+    } catch {
+        Write-Host "[WARNING] Could not parse styled-nicknames.json: $_" -ForegroundColor Yellow
+    }
+}
+
 Write-Host "`n[SUCCESS] Minecraft Server & Mod Configuration complete!" -ForegroundColor Green
 Write-Host ""
 Pause
