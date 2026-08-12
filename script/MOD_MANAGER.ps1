@@ -266,7 +266,17 @@ function Sync-ServerMods {
     }
     
     Write-Host "[*] Registering $($mods.Count) mods into Ferium profile..." -ForegroundColor Cyan
+    $profileList = & $script:FeriumExe list 2>&1 | Out-String
     foreach ($mod in $mods) {
+        if ($mod -match '^\d+$') {
+            if ($mod -eq "308702" -and $profileList -match "MR\s+\w+\s+Mod Menu") {
+                & $script:FeriumExe remove mOgUt4GM 2>&1 | Out-Null
+            } elseif ($mod -eq "60089" -and $profileList -match "MR\s+\w+\s+Mouse Tweaks") {
+                & $script:FeriumExe remove aC3cM3Vq 2>&1 | Out-Null
+            } elseif ($mod -eq "324717" -and $profileList -match "MR\s+\w+\s+Jade") {
+                & $script:FeriumExe remove nvQzSEkH 2>&1 | Out-Null
+            }
+        }
         Write-Host " -> Adding '$mod'..." -ForegroundColor Gray
         & $script:FeriumExe add $mod 2>&1 | Out-Null
     }
