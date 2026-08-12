@@ -38,3 +38,5 @@ rightclickharvest
 rei
 freecam
 trade-cycling
+1374153 #punchy
+player-locator-plus
