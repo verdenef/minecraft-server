@@ -8,12 +8,12 @@ entityculling
 ferrite-core
 lithium
 iris
-308702 #modmenu
+modmenu
 zoomify
 distanthorizons
 bobby
 appleskin
-60089 #mouse-tweaks
+mouse-tweaks
 shulkerboxtooltip
 inventory-profiles-next
 gamma-utils
@@ -23,7 +23,7 @@ sound-physics-remastered
 simple-voice-chat
 easy-shulker-boxes
 stack-to-nearby-chests
-324717 #jade
+jade
 controlling
 rightclickharvest
 rei
