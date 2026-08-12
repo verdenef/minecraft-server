@@ -285,6 +285,19 @@ function Sync-ServerMods {
     Write-Host "`n[*] Pulling mod binaries to $script:MinecraftMods..." -ForegroundColor Cyan
     & $script:FeriumExe upgrade
     
+    # Post-sync Iris-Sodium compatibility guard:
+    # Iris 1.11.2 requires stable Sodium 0.9.1+mc26.2 (0.9.2-alpha is incompatible with Iris 1.11.2)
+    $alphaSodium = Get-ChildItem -Path $script:MinecraftMods -Filter "sodium-fabric-0.9.2-alpha*.jar" -ErrorAction SilentlyContinue
+    if ($alphaSodium) {
+        Write-Host "[*] Pinning Sodium to stable version 0.9.1+mc26.2 for Iris compatibility..." -ForegroundColor Yellow
+        Remove-Item -Path $alphaSodium.FullName -Force -ErrorAction SilentlyContinue
+        $stableTarget = Join-Path -Path $script:MinecraftMods -ChildPath "sodium-fabric-0.9.1+mc26.2.jar"
+        if (-not (Test-Path -Path $stableTarget)) {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri "https://cdn.modrinth.com/data/AANobbMI/versions/2Yom1N68/sodium-fabric-0.9.1%2Bmc26.2.jar" -OutFile $stableTarget
+        }
+    }
+
     if ($LASTEXITCODE -eq 0) {
         Write-Host "`n[SUCCESS] Server mods successfully synchronized to $script:MinecraftMods!" -ForegroundColor Green
     } else {
