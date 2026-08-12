@@ -32,7 +32,7 @@ function Get-ScriptConfig {
             active_profile = "server"
             profiles = [ordered]@{
                 server = [ordered]@{
-                    path = "C:\Users\Red\AppData\Roaming\.minecraft\instances\64290aca06184fb6b59be8d2ef380ff5\mods"
+                    path = "D:\Games\minecraft-server\mods"
                     mc_version = "26.2"
                     mod_loader = "fabric"
                 }
