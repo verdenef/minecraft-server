@@ -117,3 +117,5 @@ $tabObj | ConvertTo-Json -Depth 5 | Set-Content -Path $tabConfig -Encoding UTF8
 Write-Host " -> Styled Player List config updated (ping in ms & statistics)!" -ForegroundColor Green
 
 Write-Host "`n[SUCCESS] Minecraft Server & Mod Configuration complete!" -ForegroundColor Green
+Write-Host ""
+Pause
