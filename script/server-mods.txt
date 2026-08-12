@@ -36,6 +36,5 @@ stack-to-nearby-chests
 controlling
 rightclickharvest
 rei
-jei
 freecam
 trade-cycling
