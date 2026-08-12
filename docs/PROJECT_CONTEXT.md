@@ -15,7 +15,8 @@ The central component is the interactive PowerShell script located at [`script/M
 - **Target Minecraft Mods**: `$script:MinecraftMods` (dynamically resolved based on `$script:ActiveProfile`)
 - **Active Game Version**: `$script:ActiveMcVersion` (e.g. `26.2`, `1.21.1`, `1.20.4`)
 - **Active Mod Loader**: `$script:ActiveModLoader` (e.g. `fabric`, `quilt`, `forge`, `neo-forge`)
-- **Manifest URL**: Configurable `$script:ManifestUrl` (defaults to local `script/server-mods.txt` fallback)
+- **Shared Manifest**: [`script/server-mods.txt`](file:///c:/dev/minecraft/script/server-mods.txt) (contains client-required and shared mods)
+- **Server-Only Manifest**: [`script/server-only-mods.txt`](file:///c:/dev/minecraft/script/server-only-mods.txt) (contains server-side-only mods like `tree-harvester`)
 - **PowerShell Error Preference**: `$ErrorActionPreference = "Continue"`
 
 ---
@@ -26,7 +27,7 @@ The interactive menu loop (`MOD_MANAGER.ps1`) provides 11 operational workflows:
 
 | Option | Operation | Ferium Command / Logic | Description |
 | :--- | :--- | :--- | :--- |
-| **1** | **1-Click Server Mod Sync** | `Get-ModManifest` + `ferium add` + `ferium upgrade` | Auto-fetches remote/local mod manifest (`server-mods.txt`), registers mods, and upgrades binaries directly to active instance `mods` directory. |
+| **1** | **1-Click Server Mod Sync** | `Get-ModManifest` + `ferium add` + `ferium upgrade` | Auto-fetches mod manifests (`server-mods.txt` for client; plus `server-only-mods.txt` for server profile), registers mods, and upgrades binaries directly to target `mods` directory. |
 | **2** | **Switch Instance Profile** | `Switch-ActiveProfile` | Toggles active instance profile (`server` $\leftrightarrow$ `main`) and updates `config.json`. |
 | **3** | **Upgrade / Sync** | `ferium upgrade` | Downloads and syncs binaries for all currently tracked mods in the active profile. |
 | **4** | **Add Mods (Batch)** | `ferium add <slug>` | Accepts space- or comma-separated Modrinth slugs or CurseForge IDs, splits via regex (`-split '[\s,]+'`), and adds each sequentially. |
@@ -42,15 +43,15 @@ The interactive menu loop (`MOD_MANAGER.ps1`) provides 11 operational workflows:
 
 ## Key Implementation Patterns
 
-1. **Per-Profile Version & Loader Management**:
+1. **Dual Manifest Separation**:
+   - `server-mods.txt` stores client-required and shared mods (shared with friends).
+   - `server-only-mods.txt` stores server-side-only mods (`tree-harvester`).
+   - `Sync-ServerMods` loads `server-mods.txt` for player profiles, and both manifests for `server` profile.
+2. **Per-Profile Version & Loader Management**:
    `Get-ScriptConfig` loads `{ path, mc_version, mod_loader }` objects from `config.json`. `Set-InstanceSettings` allows configuring version/loader per profile.
-2. **Ferium CLI Profile Synchronization**:
-   `Ensure-FeriumProfile` syncs `$script:ActiveProfile` with Ferium's internal profiles via `ferium profile list`, `ferium profile create`, `ferium profile switch`, and `ferium profile configure --game-version <ver> --mod-loader <loader> --output-dir <path>`.
-3. **Auto-Bootstrap Installer**:
+3. **Ferium CLI Profile Synchronization**:
+   `Ensure-FeriumProfile` syncs `$script:ActiveProfile` with Ferium's internal profiles via `ferium profile list`, `ferium profile create`, `ferium profile switch`, and `ferium profile configure`.
+4. **Auto-Bootstrap Installer**:
    `Ensure-FeriumInstalled` checks for `ferium.exe` at startup. If missing, it downloads the official Windows release zip from GitHub API/Release assets and extracts it to `$env:LOCALAPPDATA\Ferium\`.
-4. **Remote & Local Manifest Fetching**:
-   `Get-ModManifest` queries `$script:ManifestUrl` using `Invoke-RestMethod`. If offline or unconfigured, it falls back to reading `script/server-mods.txt`.
 5. **Robust Batch Parsing**:
    Uses regular expressions (`[\s,]+`) to split user input strings into individual mod identifiers, ignoring extra whitespace or comma formatting.
-6. **State Fallback & Self-Healing**:
-   Option 8 attempts `ferium modpack add`. If Ferium returns a non-zero exit code (indicating the pack already exists), it automatically executes `ferium modpack configure --output-dir <path>` to enforce output paths before executing `modpack upgrade`.

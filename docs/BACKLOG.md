@@ -20,6 +20,7 @@ This document tracks completed features, active tasks, and proposed improvements
 
 ## ✅ Completed Tasks
 
+- [x] **Separate Client & Server-Only Mod Manifests**: Separated client/shared mods into `server-mods.txt` and server-side-only mods into `server-only-mods.txt`. Option 1 (`Sync-ServerMods`) syncs client mods on player profiles, and syncs both manifests on `server` profile.
 - [x] **Per-Profile Minecraft Version & Loader Configuration**: Added per-profile `mc_version` and `mod_loader` configuration in `config.json` with Option 10 (`Set-InstanceSettings`). Automatically configures Ferium CLI for the active instance's targeted game version and mod loader.
 - [x] **Ferium CLI Profile Synchronization**: Implemented `Ensure-FeriumProfile` to automatically sync script profile switching (`server` vs `main`) with Ferium CLI's internal profiles via `ferium profile list`, `profile create`, `profile switch`, and `profile configure`.
 - [x] **Multi-Instance Config & Profile Switcher**: Added `Get-ScriptConfig` and `Switch-ActiveProfile` (Option 2) with git-ignored `config.json` support. Allows seamlessly toggling between server instances (`.../instances/64290aca.../mods`) and main singleplayer instances (`.minecraft/mods`).
