@@ -277,9 +277,10 @@ function Sync-ServerMods {
                 & $script:FeriumExe remove nvQzSEkH 2>&1 | Out-Null
             }
         }
-        Write-Host " -> Adding '$mod'..." -ForegroundColor Gray
-        & $script:FeriumExe add $mod 2>&1 | Out-Null
     }
+    
+    # Batch register all mods in a single process execution
+    & $script:FeriumExe add $mods 2>&1 | Out-Null
     
     Write-Host "`n[*] Pulling mod binaries to $script:MinecraftMods..." -ForegroundColor Cyan
     & $script:FeriumExe upgrade
