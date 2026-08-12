@@ -30,3 +30,5 @@ controlling
 rightclickharvest
 rei
 jei
+freecam
+universal-graves
