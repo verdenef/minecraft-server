@@ -4,3 +4,6 @@ tree-harvester
 clumps
 universal-graves
 krypton
+serversidehorror
+true-ending
+ultimate-sleep
