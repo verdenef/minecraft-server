@@ -1,0 +1,20 @@
+# Minecraft Server-Only Mod Manifest
+# Add Modrinth slugs or CurseForge IDs below (one per line)
+collective #required by tree-harvester
+deimos #required by serversidehorror
+polymer #required by serversidehorror and universal-graves
+placeholder-api #required by styledplayerlist
+tree-harvester
+clumps
+universal-graves
+krypton
+serversidehorror
+true-ending
+ultimate-sleep
+skinsrestorer
+anti-xray
+playertracker
+styledplayerlist
+styled-nicknames
+wither-ascension
+welcome-message
