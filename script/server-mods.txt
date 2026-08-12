@@ -1,5 +1,32 @@
-# Minecraft Server Mod Manifest
+# Minecraft Server & Client Shared Mod Manifest
 # Add Modrinth slugs or CurseForge IDs below (one per line)
 fabric-api
+journeymap
 sodium
+sodium-extra
+entityculling
+ferrite-core
 lithium
+iris
+modmenu
+zoomify
+distanthorizons
+bobby
+appleskin
+mouse-tweaks
+shulkerboxtooltip
+inventory-profiles-next
+gamma-utils
+slot-cycler
+bridging-mod
+sound-physics-remastered
+clumps
+simple-voice-chat
+easy-shulker-boxes
+stack-to-nearby-chests
+krypton
+jade
+controlling
+rightclickharvest
+rei
+jei
