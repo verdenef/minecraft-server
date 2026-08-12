@@ -1,6 +1,12 @@
 # Minecraft Server & Client Shared Mod Manifest
 # Add Modrinth slugs or CurseForge IDs below (one per line)
 fabric-api
+cloth-config
+architectury-api
+fabric-language-kotlin
+libipn
+searchables
+puzzles-lib
 journeymap
 sodium
 sodium-extra
