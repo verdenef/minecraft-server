@@ -34,7 +34,7 @@ if (Test-Path -Path $propFile) {
             $newProps += "view-distance=10"
         }
         elseif ($line.StartsWith("simulation-distance=")) {
-            $newProps += "simulation-distance=10"
+            $newProps += "simulation-distance=6"
         }
         elseif ($line.StartsWith("max-players=")) {
             $newProps += "max-players=20"
@@ -262,6 +262,17 @@ if (Test-Path -Path $nickConfig) {
     } catch {
         Write-Host "[WARNING] Could not parse styled-nicknames.json: $_" -ForegroundColor Yellow
     }
+}
+
+# ------------------------------------------------------------------------------
+# 8. Distant Horizons Server Optimization (config/DistantHorizons.toml)
+# ------------------------------------------------------------------------------
+$dhConfig = Join-Path -Path $configDir -ChildPath "DistantHorizons.toml"
+if (Test-Path -Path $dhConfig) {
+    $dhContent = Get-Content -Path $dhConfig -Raw
+    $dhContent = $dhContent.Replace("enableServerGeneration = true", "enableServerGeneration = false")
+    $dhContent | Set-Content -Path $dhConfig -Encoding UTF8
+    Write-Host " -> Distant Horizons server generation offloaded to clients (eliminates tick lag)!" -ForegroundColor Green
 }
 
 Write-Host "`n[SUCCESS] Minecraft Server & Mod Configuration complete!" -ForegroundColor Green
