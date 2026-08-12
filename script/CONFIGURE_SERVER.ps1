@@ -23,17 +23,23 @@ if (Test-Path -Path $propFile) {
     foreach ($line in $props) {
         if ($line.StartsWith("motd=")) {
             $newProps += 'motd=\u00A76Hustisya Para Kay Rene \u00A77| \u00A7aSMP'
-        } elseif ($line.StartsWith("difficulty=")) {
+        }
+        elseif ($line.StartsWith("difficulty=")) {
             $newProps += "difficulty=hard"
-        } elseif ($line.StartsWith("online-mode=")) {
+        }
+        elseif ($line.StartsWith("online-mode=")) {
             $newProps += "online-mode=false"
-        } elseif ($line.StartsWith("view-distance=")) {
+        }
+        elseif ($line.StartsWith("view-distance=")) {
             $newProps += "view-distance=10"
-        } elseif ($line.StartsWith("simulation-distance=")) {
+        }
+        elseif ($line.StartsWith("simulation-distance=")) {
             $newProps += "simulation-distance=10"
-        } elseif ($line.StartsWith("max-players=")) {
+        }
+        elseif ($line.StartsWith("max-players=")) {
             $newProps += "max-players=20"
-        } else {
+        }
+        else {
             $newProps += $line
         }
     }
@@ -48,9 +54,9 @@ $gravesDir = Join-Path -Path $configDir -ChildPath "universal-graves"
 if (-not (Test-Path -Path $gravesDir)) { New-Item -ItemType Directory -Path $gravesDir -Force | Out-Null }
 $gravesConfig = Join-Path -Path $gravesDir -ChildPath "config.json"
 $gravesObj = @{
-    "protection_time" = 1800
+    "protection_time"    = 1800
     "grave_despawn_time" = -1
-    "item_retrieval" = "ONE_TAP"
+    "item_retrieval"     = "ONE_TAP"
 }
 $gravesObj | ConvertTo-Json -Depth 5 | Set-Content -Path $gravesConfig -Encoding UTF8
 Write-Host " -> Universal Graves config updated (30m protection, no despawn)!" -ForegroundColor Green
@@ -125,7 +131,7 @@ $horrorObj = [ordered]@{
     # Creepy Signs
     "random_signs_enable"                = $true
     "random_signs_chance"                = 500000
-    "random_signs_texts"                 = @("TABANGI KO", "YAWAAAAAA", "nay iro mamatay unya", "james biot", "ben opaw")
+    "random_signs_texts"                 = @("TABANGI KO", "YAWAAAAAA", "nay iro mamatay unya", "james biot", "ben opaw", "i see you", "rene was here")
 
     # Torch Breaking & Modification
     "break_torches_enable"               = $true
@@ -184,17 +190,51 @@ $voiceProps | Set-Content -Path $voiceConfig -Encoding UTF8
 Write-Host " -> Simple Voice Chat config updated (port 24454, 48b range)!" -ForegroundColor Green
 
 # ------------------------------------------------------------------------------
-# 6. Styled Player List (config/styledplayerlist/config.json)
+# 6. Styled Player List (config/styledplayerlist/config.json & styles/default.json)
 # ------------------------------------------------------------------------------
 $tabDir = Join-Path -Path $configDir -ChildPath "styledplayerlist"
 if (-not (Test-Path -Path $tabDir)) { New-Item -ItemType Directory -Path $tabDir -Force | Out-Null }
+
 $tabConfig = Join-Path -Path $tabDir -ChildPath "config.json"
-$tabObj = @{
-    "header" = "§6Hustisya Para Kay Rene §7| §aSMP"
-    "player_list_name" = "[${lvl}] ${name} (Deaths: ${deaths} | Playtime: ${playtime} | Ping: ${ping}ms)"
+$tabObj = [ordered]@{
+    "config_version"               = 2
+    "default_style"                = "default"
+    "player"                       = [ordered]@{
+        "modify_name"              = $true
+        "modify_right_text"        = $true
+        "modify_list_order"        = $false
+        "modify_visibility"        = $false
+        "passthrough"               = $false
+        "hidden"                   = $false
+        "format"                   = "%player:displayname%"
+        "right_text"               = "<gray>Deaths: <red>%statistic:deaths%</red> | Playtime: <gold>%statistic:play_time%</gold> | Ping: <green>%player:ping%ms</green></gray>"
+        "update_on_chat_message"   = $false
+        "update_tick_time"         = 20
+    }
+    "client_show_in_singleplayer" = $true
 }
 $tabObj | ConvertTo-Json -Depth 5 | Set-Content -Path $tabConfig -Encoding UTF8
-Write-Host " -> Styled Player List config updated (ping in ms & statistics)!" -ForegroundColor Green
+
+$stylesDir = Join-Path -Path $tabDir -ChildPath "styles"
+if (-not (Test-Path -Path $stylesDir)) { New-Item -ItemType Directory -Path $stylesDir -Force | Out-Null }
+$defaultStyle = Join-Path -Path $stylesDir -ChildPath "default.json"
+$styleObj = [ordered]@{
+    "style_name"          = "Default"
+    "update_tick_time"    = 20
+    "list_header"         = @(
+        "",
+        "<gold><bold>Hustisya Para Kay Rene</bold></gold> | <green>SMP</green>",
+        ""
+    )
+    "list_footer"         = @(
+        "",
+        "<gray>TPS: %server:tps_colored% | Ping: <color:#ffba26>%player:ping%ms</color></gray>",
+        ""
+    )
+    "hidden_in_commands"  = $false
+}
+$styleObj | ConvertTo-Json -Depth 5 | Set-Content -Path $defaultStyle -Encoding UTF8
+Write-Host " -> Styled Player List config updated (header, footer, deaths, playtime & ping in ms)!" -ForegroundColor Green
 
 Write-Host "`n[SUCCESS] Minecraft Server & Mod Configuration complete!" -ForegroundColor Green
 Write-Host ""
