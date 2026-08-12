@@ -7,6 +7,9 @@ fabric-language-kotlin
 libipn
 searchables
 puzzles-lib
+yacl
+forge-config-api-port
+jamlib
 journeymap
 sodium
 sodium-extra
