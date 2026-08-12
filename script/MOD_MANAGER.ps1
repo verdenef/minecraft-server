@@ -121,6 +121,14 @@ function Ensure-FeriumProfile {
         $script:ActiveProfile = "main"
     }
     
+    if ([string]::IsNullOrWhiteSpace($script:ActiveMcVersion)) {
+        $script:ActiveMcVersion = "26.2"
+    }
+    
+    if ([string]::IsNullOrWhiteSpace($script:ActiveModLoader)) {
+        $script:ActiveModLoader = "fabric"
+    }
+    
     if (-not (Test-Path -Path $script:MinecraftMods)) {
         New-Item -ItemType Directory -Path $script:MinecraftMods -Force | Out-Null
     }
@@ -129,13 +137,13 @@ function Ensure-FeriumProfile {
     $hasProfile = ($profilesOutput -match "(?m)^\s*$($script:ActiveProfile)\b") -or ($profilesOutput -match "(?m)^\s*$($script:ActiveProfile)\*")
     
     if (-not $hasProfile) {
-        Write-Host "[*] Creating Ferium CLI profile '$script:ActiveProfile'..." -ForegroundColor Cyan
-        & $script:FeriumExe profile create --name $script:ActiveProfile --output-dir "$script:MinecraftMods" --mod-loader fabric --game-version 26.2 | Out-Null
+        Write-Host "[*] Creating Ferium CLI profile '$script:ActiveProfile' (MC: $script:ActiveMcVersion | $script:ActiveModLoader)..." -ForegroundColor Cyan
+        & $script:FeriumExe profile create --name $script:ActiveProfile --output-dir "$script:MinecraftMods" --mod-loader $script:ActiveModLoader --game-version $script:ActiveMcVersion | Out-Null
     } else {
         & $script:FeriumExe profile switch $script:ActiveProfile | Out-Null
     }
     
-    & $script:FeriumExe profile configure --output-dir "$script:MinecraftMods" --game-version 26.2 | Out-Null
+    & $script:FeriumExe profile configure --output-dir "$script:MinecraftMods" --mod-loader $script:ActiveModLoader --game-version $script:ActiveMcVersion | Out-Null
 }
 
 Get-ScriptConfig
@@ -282,8 +290,9 @@ Set-Location -Path $script:FeriumDir
 while ($true) {
     Clear-Host
     Write-Host "==========================================" -ForegroundColor Cyan
-    Write-Host "     Ferium Mod Manager (Fabric 26.2)" -ForegroundColor Cyan
-    Write-Host "   Target: [$script:ActiveProfile] -> $script:MinecraftMods" -ForegroundColor DarkCyan
+    Write-Host "         Ferium Minecraft Mod Manager" -ForegroundColor Cyan
+    Write-Host "   Target: [$script:ActiveProfile] (MC: $script:ActiveMcVersion | $script:ActiveModLoader)" -ForegroundColor DarkCyan
+    Write-Host "   Path  : $script:MinecraftMods" -ForegroundColor Gray
     Write-Host "==========================================" -ForegroundColor Cyan
     Write-Host "  1. ⚡ 1-Click Server Mod Sync (Auto-Fetch & Upgrade)" -ForegroundColor Green
     Write-Host "  2. 🔄 Switch Target Instance Profile [$script:ActiveProfile]" -ForegroundColor Cyan
@@ -294,10 +303,11 @@ while ($true) {
     Write-Host "  7. Remove a Tracked Mod" -ForegroundColor Red
     Write-Host "  8. Add / Configure & Upgrade a Modpack" -ForegroundColor Magenta
     Write-Host "  9. Scan Folder for Untracked Mods" -ForegroundColor Green
-    Write-Host " 10. Exit" -ForegroundColor Gray
+    Write-Host " 10. ⚙️ Configure Active Instance Settings [MC Version / Loader]" -ForegroundColor DarkYellow
+    Write-Host " 11. Exit" -ForegroundColor Gray
     Write-Host "==========================================" -ForegroundColor Cyan
 
-    $choice = Read-Host "`nSelect an option (1-10)"
+    $choice = Read-Host "`nSelect an option (1-11)"
 
     switch ($choice) {
         "1" {
@@ -423,11 +433,14 @@ while ($true) {
             }
         }
         "10" {
+            Set-InstanceSettings
+        }
+        "11" {
             Write-Host "`nTerminating session..." -ForegroundColor Gray
             break
         }
         Default {
-            Write-Host "`n[ERROR] Invalid selection. Awaiting input between 1 and 10." -ForegroundColor Red
+            Write-Host "`n[ERROR] Invalid selection. Awaiting input between 1 and 11." -ForegroundColor Red
         }
     }
     
