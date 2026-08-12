@@ -11,8 +11,8 @@ The central component is the interactive PowerShell script located at [`script/M
 
 - **Ferium Directory**: `$env:LOCALAPPDATA\Ferium` (auto-created)
 - **Ferium Executable**: `$env:LOCALAPPDATA\Ferium\ferium.exe` (auto-downloaded from GitHub releases if missing)
-- **Instance Directory Override**: Configurable `$script:InstanceDir` (e.g. `C:\Users\Red\AppData\Roaming\.minecraft\instances\64290aca06184fb6b59be8d2ef380ff5`). Defaults to standard `%APPDATA%\.minecraft` if unconfigured/missing.
-- **Target Minecraft Mods**: `$script:MinecraftMods` (`<InstanceDir>\mods` or `%APPDATA%\.minecraft\mods`)
+- **Git-Ignored Local Config**: `script/config.json` (stores private multi-instance profile paths e.g. `server` vs `main`)
+- **Target Minecraft Mods**: `$script:MinecraftMods` (dynamically resolved based on `$script:ActiveProfile` e.g. `<InstanceDir>\mods` or `%APPDATA%\.minecraft\mods`)
 - **Manifest URL**: Configurable `$script:ManifestUrl` (defaults to local `script/server-mods.txt` fallback)
 - **Target Loader / Version**: Fabric (Profile reference: Fabric 26.2)
 - **PowerShell Error Preference**: `$ErrorActionPreference = "Continue"`
@@ -21,31 +21,32 @@ The central component is the interactive PowerShell script located at [`script/M
 
 ## Script Architecture & Functionality
 
-The interactive menu loop (`MOD_MANAGER.ps1`) provides 9 operational workflows:
+The interactive menu loop (`MOD_MANAGER.ps1`) provides 10 operational workflows:
 
 | Option | Operation | Ferium Command / Logic | Description |
 | :--- | :--- | :--- | :--- |
-| **1** | **1-Click Server Mod Sync** | `Get-ModManifest` + `ferium add` + `ferium upgrade` | Auto-fetches remote/local mod manifest (`server-mods.txt`), registers mods, and upgrades binaries directly to `.minecraft/mods`. |
-| **2** | **Upgrade / Sync** | `ferium upgrade` | Downloads and syncs binaries for all currently tracked mods in the profile. |
-| **3** | **Add Mods (Batch)** | `ferium add <slug>` | Accepts space- or comma-separated Modrinth slugs or CurseForge IDs, splits via regex (`-split '[\s,]+'`), and adds each sequentially. |
-| **4** | **Add & Upgrade** | `ferium add <slug>` + `ferium upgrade` | Performs batch addition and automatically triggers a repository upgrade if at least one mod is successfully added. |
-| **5** | **List Tracked Mods** | `ferium list` | Outputs all mods currently registered in the active Ferium profile. |
-| **6** | **Remove Tracked Mod** | `ferium remove <slug>` | Untracks a mod from Ferium profile (note: local `.jar` binaries may require manual cleanup). |
-| **7** | **Add/Configure Modpack** | `ferium modpack add ...` / `ferium modpack configure ...` | Adds a modpack pointing output to `%APPDATA%\.minecraft`. Includes state recovery fallback to `configure` if already added, followed by `modpack upgrade`. |
-| **8** | **Scan Directory** | `ferium scan` | Scans the local `.minecraft/mods` directory for untracked `.jar` files and registers them to Ferium. |
-| **9** | **Exit** | `break` | Terminates the interactive shell session cleanly. |
+| **1** | **1-Click Server Mod Sync** | `Get-ModManifest` + `ferium add` + `ferium upgrade` | Auto-fetches remote/local mod manifest (`server-mods.txt`), registers mods, and upgrades binaries directly to active instance `mods` directory. |
+| **2** | **Switch Instance Profile** | `Switch-ActiveProfile` | Toggles active instance profile (`server` $\leftrightarrow$ `main`) and updates `config.json`. |
+| **3** | **Upgrade / Sync** | `ferium upgrade` | Downloads and syncs binaries for all currently tracked mods in the active profile. |
+| **4** | **Add Mods (Batch)** | `ferium add <slug>` | Accepts space- or comma-separated Modrinth slugs or CurseForge IDs, splits via regex (`-split '[\s,]+'`), and adds each sequentially. |
+| **5** | **Add & Upgrade** | `ferium add <slug>` + `ferium upgrade` | Performs batch addition and automatically triggers a repository upgrade if at least one mod is successfully added. |
+| **6** | **List Tracked Mods** | `ferium list` | Outputs all mods currently registered in the active Ferium profile. |
+| **7** | **Remove Tracked Mod** | `ferium remove <slug>` | Untracks a mod from Ferium profile (note: local `.jar` binaries may require manual cleanup). |
+| **8** | **Add/Configure Modpack** | `ferium modpack add ...` / `ferium modpack configure ...` | Adds a modpack pointing output to `%APPDATA%\.minecraft`. Includes state recovery fallback to `configure` if already added, followed by `modpack upgrade`. |
+| **9** | **Scan Directory** | `ferium scan` | Scans the local `.minecraft/mods` directory for untracked `.jar` files and registers them to Ferium. |
+| **10** | **Exit** | `break` | Terminates the interactive shell session cleanly. |
 
 ---
 
 ## Key Implementation Patterns
 
-1. **Auto-Bootstrap Installer**:
+1. **Git-Ignored Multi-Profile Config**:
+   `Get-ScriptConfig` loads `config.json`. If missing (e.g. on a friend's PC), it auto-generates a clean default pointing to `%APPDATA%\.minecraft\mods`.
+2. **Auto-Bootstrap Installer**:
    `Ensure-FeriumInstalled` checks for `ferium.exe` at startup. If missing, it downloads the official Windows release zip from GitHub API/Release assets and extracts it to `$env:LOCALAPPDATA\Ferium\`.
-2. **Remote & Local Manifest Fetching**:
+3. **Remote & Local Manifest Fetching**:
    `Get-ModManifest` queries `$script:ManifestUrl` using `Invoke-RestMethod`. If offline or unconfigured, it falls back to reading `script/server-mods.txt`.
-3. **Robust Batch Parsing**:
+4. **Robust Batch Parsing**:
    Uses regular expressions (`[\s,]+`) to split user input strings into individual mod identifiers, ignoring extra whitespace or comma formatting.
-4. **State Fallback & Self-Healing**:
-   Option 7 attempts `ferium modpack add`. If Ferium returns a non-zero exit code (indicating the pack already exists), it automatically executes `ferium modpack configure --output-dir <path>` to enforce output paths before executing `modpack upgrade`.
-5. **Status Tracking**:
-   Validates `$LASTEXITCODE` after every CLI call to display color-coded feedback (`[SUCCESS]`, `[ERROR]`, `[WARNING]`).
+5. **State Fallback & Self-Healing**:
+   Option 8 attempts `ferium modpack add`. If Ferium returns a non-zero exit code (indicating the pack already exists), it automatically executes `ferium modpack configure --output-dir <path>` to enforce output paths before executing `modpack upgrade`.

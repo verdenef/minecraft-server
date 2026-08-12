@@ -7,22 +7,22 @@ This document tracks completed features, active tasks, and proposed improvements
 ## 📋 To-Do / Planned Improvements
 
 ### High Priority
-- [ ] **Mod Removal Binary Cleanup**: Enhance Option 6 (`Remove a Tracked Mod`) to optionally search `%APPDATA%\.minecraft\mods` for the corresponding `.jar` file and prompt the user to remove it.
+- [ ] **Mod Removal Binary Cleanup**: Enhance Option 7 (`Remove a Tracked Mod`) to optionally search active mods folder for the corresponding `.jar` file and prompt the user to remove it.
 
 ### Medium Priority
-- [ ] **Profile Switcher**: Add an interactive menu option to switch Ferium profiles (e.g., between different Minecraft versions or loaders like Fabric, Forge, NeoForge).
+- [ ] **Ferium Profile Switcher**: Add an interactive menu option to switch Ferium profiles (e.g., between different Minecraft versions or loaders like Fabric, Forge, NeoForge).
 - [ ] **Input Sanitization & Validation**: Sanitize user inputs for mod slugs/IDs to catch invalid characters before executing `ferium add`.
 - [ ] **Logging & Export**: Option to log CLI command outputs to a `logs/` directory for debugging upgrade or scan failures.
 
 ### Low Priority / Quality of Life
-- [ ] **Auto-Detect Minecraft Installation Path**: Allow overriding default `%APPDATA%\.minecraft` path via command-line parameter or environment variable.
-- [ ] **Batch Removal Support**: Extend Option 6 to support removing multiple mod slugs in a single batch command.
+- [ ] **Batch Removal Support**: Extend Option 7 to support removing multiple mod slugs in a single batch command.
 
 ---
 
 ## ✅ Completed Tasks
 
-- [x] **1-Click Remote/Local Manifest Sync**: Implemented Option 1 `Sync-ServerMods` to auto-fetch server mod list from remote Gist/URL or local `server-mods.txt` and upgrade directly to `.minecraft/mods`.
+- [x] **Multi-Instance Config & Profile Switcher**: Added `Get-ScriptConfig` and `Switch-ActiveProfile` (Option 2) with git-ignored `config.json` support. Allows seamlessly toggling between server instances (`.../instances/64290aca.../mods`) and main singleplayer instances (`.minecraft/mods`).
+- [x] **1-Click Remote/Local Manifest Sync**: Implemented Option 1 `Sync-ServerMods` to auto-fetch server mod list from remote Gist/URL or local `server-mods.txt` and upgrade directly to target mods directory.
 - [x] **Ferium Auto-Bootstrapper**: Dynamic binary resolution in `$env:LOCALAPPDATA\Ferium\ferium.exe` with automatic GitHub release zip downloading if missing.
 - [x] **Initial Script Framework**: Created interactive PowerShell CLI menu wrapper (`script/MOD_MANAGER.ps1`).
 - [x] **Batch Add Parsing**: Implemented regex-based split (`-split '[\s,]+'`) for adding multiple mods in one prompt.
