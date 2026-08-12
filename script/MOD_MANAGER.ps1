@@ -268,7 +268,7 @@ function Sync-ServerMods {
     Write-Host "[*] Registering $($mods.Count) mods into Ferium profile..." -ForegroundColor Cyan
     foreach ($mod in $mods) {
         Write-Host " -> Adding '$mod'..." -ForegroundColor Gray
-        & $script:FeriumExe add $mod | Out-Null
+        & $script:FeriumExe add $mod 2>&1 | Out-Null
     }
     
     Write-Host "`n[*] Pulling mod binaries to $script:MinecraftMods..." -ForegroundColor Cyan
