@@ -303,15 +303,45 @@ $mcmeta | Set-Content -Path (Join-Path -Path $dpDir -ChildPath "pack.mcmeta") -E
 
 $loadMc = @'
 scoreboard objectives add show_guide trigger "Show Server Guide"
-tellraw @a [{"text":"[Server] ","color":"gold","bold":true},{"text":"Interactive Server Guide Loaded! Type ","color":"green"},{"text":"/trigger show_guide","color":"aqua","bold":true},{"text":" to view.","color":"green"}]
+scoreboard objectives add guide_timer dummy "Guide Timer"
+scoreboard objectives add tip_index dummy "Tip Index"
+tellraw @a [{"text":"[Server] ","color":"gold","bold":true},{"text":"Interactive Welcome Guide & 5-Min Tip Broadcaster Loaded!","color":"green"}]
 '@
 $loadMc | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\function\load.mcfunction") -Encoding UTF8
 
 $tickMc = @'
 scoreboard players enable @a show_guide
 execute as @a[scores={show_guide=1..}] run function server_guide:send_guide
+
+scoreboard players add #server guide_timer 1
+execute if score #server guide_timer matches 6000.. run function server_guide:broadcast_tip
 '@
 $tickMc | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\function\tick.mcfunction") -Encoding UTF8
+
+$broadcastMc = @'
+scoreboard players set #server guide_timer 0
+scoreboard players add #server tip_index 1
+execute if score #server tip_index matches 7.. run scoreboard players set #server tip_index 1
+
+# Tip 1: Skins
+execute if score #server tip_index matches 1 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Change your skin anytime! Type ","color":"yellow"},{"text":"/skin set <SkinName>","color":"aqua","bold":true,"clickEvent":{"action":"suggest_command","value":"/skin set "},"hoverEvent":{"action":"show_text","contents":"Click to use /skin"}},{"text":" or use a PNG link with /skin url <URL>","color":"yellow"}]
+
+# Tip 2: Nicknames & Colors
+execute if score #server tip_index matches 2 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Customize your chat & TAB name color! Type ","color":"yellow"},{"text":"/nick set &aName","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/nick set &a"},"hoverEvent":{"action":"show_text","contents":"Click to use /nick"}},{"text":" or use gradients like <gradient:#ff4500:#ffa500>Name</gradient>!","color":"yellow"}]
+
+# Tip 3: Universal Graves
+execute if score #server tip_index matches 3 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Died far from home? Your items are safe in a Grave for 30 minutes! Right-click 1-tap to retrieve everything.","color":"yellow"}]
+
+# Tip 4: Tree Harvester & Farming
+execute if score #server tip_index matches 4 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Chop trees fast! Break the bottom log to fell the tree & decay leaves instantly. Right-click mature crops to harvest & auto-replant.","color":"yellow"}]
+
+# Tip 5: Shulkers & Inventory Sorting
+execute if score #server tip_index matches 5 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Inventory Shortcuts: Right-click a Shulker Box directly inside your inventory to open it! Press [R] in inventory/chest to auto-sort.","color":"yellow"}]
+
+# Tip 6: Keybinds & Navigation
+execute if score #server tip_index matches 6 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Controls: [J] Map | [B] Waypoint | [G] Fullbright | [C] Zoom | [F4] Freecam | [V] Voice Chat. Type ","color":"yellow"},{"text":"/trigger show_guide","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger show_guide"}},{"text":" for full guide!","color":"yellow"}]
+'@
+$broadcastMc | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\function\broadcast_tip.mcfunction") -Encoding UTF8
 
 $sendGuideMc = @'
 tellraw @s ["",{"text":"==================================================\n","color":"gold","bold":true},{"text":"        Welcome to Hustisya Para Kay Rene SMP!\n","color":"gold","bold":true},{"text":"==================================================\n","color":"gold","bold":true},{"text":" 👤 Custom Skins   : ","color":"yellow","bold":true},{"text":"/skin set <SkinName>  ","color":"gray"},{"text":"[Click to Set Skin]\n","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/skin set "},"hoverEvent":{"action":"show_text","contents":"Click to open /skin command"}},{"text":" 🎨 Name Colors    : ","color":"yellow","bold":true},{"text":"/nick set &aName ","color":"gray"},{"text":"[Click to Set Color]\n","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/nick set &a"},"hoverEvent":{"action":"show_text","contents":"Click to open /nick command"}},{"text":" 🪦 Universal Grave: ","color":"yellow","bold":true},{"text":"30-min item protection on death (1-tap retrieval)\n","color":"gray"},{"text":" 🪓 Tree Harvester : ","color":"yellow","bold":true},{"text":"Break bottom log to chop & decay leaves\n","color":"gray"},{"text":" 🛌 1-Player Sleep : ","color":"yellow","bold":true},{"text":"Only 1 player needed to skip the night\n","color":"gray"},{"text":" 🪞 Shulker Preview: ","color":"yellow","bold":true},{"text":"Right-click shulker in inventory | Shift to preview\n","color":"gray"},{"text":" 🗺️ JourneyMap     : ","color":"yellow","bold":true},{"text":"[J] Full Map | [B] Waypoints | [Ctrl+B] Quick Pin\n","color":"gray"},{"text":" ⌨️ Utility Keys   : ","color":"yellow","bold":true},{"text":"[G] Fullbright | [C] Zoom | [F4] Freecam | [V] Voice\n","color":"gray"},{"text":"==================================================\n","color":"gold","bold":true},{"text":"  Type ","color":"gray"},{"text":"/trigger show_guide","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger show_guide"},"hoverEvent":{"action":"show_text","contents":"Click to re-open guide"}},{"text":" anytime in chat to re-open this guide!\n","color":"gray"},{"text":"==================================================","color":"gold","bold":true}]
