@@ -146,13 +146,15 @@ $horrorObj = [ordered]@{
     "joining_in_dungeon_enable"          = $true
     "joining_in_dungeon_chance"          = 140
 
+    # Leaf Removal Horror Feature
+    "removing_leaves_enable"             = $true
+    "removing_leaves_chance"             = 2000000
+
     # High-Risk / Destructive Features (Disabled by Default)
     "burn_down_house_enable"             = $false
     "burn_down_house_chance_per_wake_up" = 100
     "joining_on_bedrock_enable"          = $false
     "joining_on_bedrock_chance"          = 70
-    "removing_leaves_enable"             = $false
-    "removing_leaves_chance"             = 2000000
 
     # Player Heads (Disabled as requested)
     "heads_from_list_enable"             = $false
