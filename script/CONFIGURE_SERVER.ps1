@@ -247,8 +247,8 @@ if (Test-Path -Path $nickConfig) {
         $nObj.changeDisplayName = $true
         $nObj.changePlayerListName = $true
         $nObj.allowLegacyFormatting = $true
-        $nObj.nicknameFormat = "${nickname}"
-        $nObj.nicknameFormatColor = "${nickname}"
+        $nObj.nicknameFormat = '${nickname}'
+        $nObj.nicknameFormatColor = '${nickname}'
         if ($null -ne $nObj.defaultEnabledFormatting) {
             $nObj.defaultEnabledFormatting.color = $true
             $nObj.defaultEnabledFormatting.gradient = $true
