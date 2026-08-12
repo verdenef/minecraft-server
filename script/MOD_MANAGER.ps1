@@ -51,6 +51,34 @@ function Get-ScriptConfig {
         $script:ActiveProfile = "main"
         $script:MinecraftMods = "$env:APPDATA\.minecraft\mods"
     }
+    
+    Ensure-FeriumProfile
+}
+
+function Ensure-FeriumProfile {
+    if (-not (Test-Path -Path $script:FeriumExe)) {
+        return
+    }
+    
+    if ([string]::IsNullOrWhiteSpace($script:ActiveProfile)) {
+        $script:ActiveProfile = "main"
+    }
+    
+    if (-not (Test-Path -Path $script:MinecraftMods)) {
+        New-Item -ItemType Directory -Path $script:MinecraftMods -Force | Out-Null
+    }
+    
+    $profilesOutput = & $script:FeriumExe profile list 2>&1 | Out-String
+    $hasProfile = ($profilesOutput -match "(?m)^\s*$($script:ActiveProfile)\b") -or ($profilesOutput -match "(?m)^\s*$($script:ActiveProfile)\*")
+    
+    if (-not $hasProfile) {
+        Write-Host "[*] Creating Ferium CLI profile '$script:ActiveProfile'..." -ForegroundColor Cyan
+        & $script:FeriumExe profile create --name $script:ActiveProfile --output-dir "$script:MinecraftMods" --mod-loader fabric | Out-Null
+    } else {
+        & $script:FeriumExe profile switch $script:ActiveProfile | Out-Null
+    }
+    
+    & $script:FeriumExe profile configure --output-dir "$script:MinecraftMods" | Out-Null
 }
 
 Get-ScriptConfig
