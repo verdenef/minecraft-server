@@ -276,35 +276,26 @@ if (Test-Path -Path $dhConfig) {
 }
 
 # ------------------------------------------------------------------------------
-# 9. Welcome Guide & Announcements (config/styled-chat.json)
+# 9. Welcome Guide & Announcements (config/welcomemessage.json5)
 # ------------------------------------------------------------------------------
-$scFile = Join-Path -Path $configDir -ChildPath "styled-chat.json"
-if (Test-Path -Path $scFile) {
-    try {
-        $scObj = Get-Content -Path $scFile -Raw | ConvertFrom-Json
-        $pLit = '${player}'
-        $guideLines = @(
-            "<yellow><lang:multiplayer.player.joined:'$pLit'></yellow>",
-            "<gold><bold>========================================</bold></gold>",
-            "<gold><bold>  Welcome to Hustisya Para Kay Rene SMP!</bold></gold>",
-            "<gold><bold>========================================</bold></gold>",
-            "<yellow>- Custom Skins:</yellow> <gray>/skin set <SkinName></gray>",
-            "<yellow>- Nicknames & Colors:</yellow> <gray>/nick set &aName or <gradient:#ff4500:#ffa500>Name</gradient></gray>",
-            "<yellow>- Graves:</yellow> <gray>30-min item protection on death (1-tap retrieval)</gray>",
-            "<yellow>- Tree Harvester:</yellow> <gray>Break bottom log to chop & decay leaves</gray>",
-            "<yellow>- 1-Player Sleep:</yellow> <gray>1 player sleeping skips the night</gray>",
-            "<yellow>- JourneyMap:</yellow> <gray>[J] Full Map | [B] Waypoints | [Ctrl+B] Quick Pin</gray>",
-            "<yellow>- Shulkers:</yellow> <gray>Right-click shulker in inventory to open | Hold Shift to preview</gray>",
-            "<yellow>- Keybinds:</yellow> <gray>[G] Fullbright | [C] Zoom | [F6] Freecam | [V] Voice Chat</gray>",
-            "<gold><bold>========================================</bold></gold>"
-        ) -join "\n"
-        $scObj.default.message_formats.joined_the_game = $guideLines
-        ($scObj | ConvertTo-Json -Depth 10).Replace('\u003c', '<').Replace('\u003e', '>').Replace('\u0026', '&') | Set-Content -Path $scFile -Encoding UTF8
-        Write-Host " -> Welcome Guide & Announcements configured in Styled Chat!" -ForegroundColor Green
-    } catch {
-        Write-Host "[WARNING] Could not configure styled-chat.json: $_" -ForegroundColor Yellow
-    }
+$wmFile = Join-Path -Path $configDir -ChildPath "welcomemessage.json5"
+$wmJson5 = @'
+{
+	"onlyRunOnDedicatedServers": false,
+	"sendEmptyLineBeforeFirstMessage": true,
+	"messageOneText": "=== Welcome to Hustisya Para Kay Rene SMP! ===",
+	"messageOneColourIndex": 6,
+	"messageOneOptionalURL": "",
+	"messageTwoText": "Commands: /skin set <SkinName> | /nick set &aName | Graves (30m)",
+	"messageTwoColourIndex": 14,
+	"messageTwoOptionalURL": "",
+	"messageThreeText": "Controls: [J] Map | [B] Waypoint | [G] Fullbright | [C] Zoom | [V] Voice Chat",
+	"messageThreeColourIndex": 11,
+	"messageThreeOptionalURL": ""
 }
+'@
+$wmJson5 | Set-Content -Path $wmFile -Encoding UTF8
+Write-Host " -> Welcome Guide & Announcements config updated (welcomemessage.json5)!" -ForegroundColor Green
 
 Write-Host "`n[SUCCESS] Minecraft Server & Mod Configuration complete!" -ForegroundColor Green
 Write-Host ""
