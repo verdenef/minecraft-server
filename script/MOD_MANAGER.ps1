@@ -61,12 +61,23 @@ function Get-ModManifest {
     }
     
     if ([string]::IsNullOrWhiteSpace($content)) {
-        $localManifest = Join-Path -Path $PSScriptRoot -ChildPath "server-mods.txt"
-        if (-not (Test-Path -Path $localManifest)) {
-            $localManifest = "server-mods.txt"
+        $candidates = @()
+        if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+            $candidates += Join-Path -Path $PSScriptRoot -ChildPath "server-mods.txt"
+            $candidates += Join-Path -Path $PSScriptRoot -ChildPath "..\script\server-mods.txt"
+        }
+        $candidates += "script\server-mods.txt"
+        $candidates += "server-mods.txt"
+        
+        $localManifest = $null
+        foreach ($path in $candidates) {
+            if (Test-Path -Path $path) {
+                $localManifest = $path
+                break
+            }
         }
         
-        if (Test-Path -Path $localManifest) {
+        if ($localManifest) {
             Write-Host "[*] Reading local manifest from $localManifest..." -ForegroundColor Cyan
             $content = Get-Content -Path $localManifest -Raw
         } else {
