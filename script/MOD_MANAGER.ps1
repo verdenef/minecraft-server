@@ -10,17 +10,50 @@
 $script:FeriumDir = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Ferium"
 $script:FeriumExe = Join-Path -Path $script:FeriumDir -ChildPath "ferium.exe"
 
-# Custom Instance Directory Override (leave empty to default to standard .minecraft)
-# Set your server instance path below or leave empty for default .minecraft
-$script:InstanceDir = "C:\Users\Red\AppData\Roaming\.minecraft\instances\64290aca06184fb6b59be8d2ef380ff5"
-
-if (-not [string]::IsNullOrWhiteSpace($script:InstanceDir) -and (Test-Path -Path $script:InstanceDir)) {
-    $script:MinecraftRoot = $script:InstanceDir
-    $script:MinecraftMods = Join-Path -Path $script:InstanceDir -ChildPath "mods"
-} else {
-    $script:MinecraftRoot = "$env:APPDATA\.minecraft"
-    $script:MinecraftMods = "$env:APPDATA\.minecraft\mods"
+function Get-ScriptConfig {
+    $script:ConfigPath = "config.json"
+    if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+        $candidate = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
+        if (Test-Path -Path $candidate) {
+            $script:ConfigPath = $candidate
+        } elseif (Test-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\config.json")) {
+            $script:ConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\config.json"
+        } else {
+            $script:ConfigPath = $candidate
+        }
+    }
+    
+    if (-not (Test-Path -Path $script:ConfigPath)) {
+        $defaultConfig = [ordered]@{
+            active_profile = "server"
+            profiles = [ordered]@{
+                server = "C:\Users\Red\AppData\Roaming\.minecraft\instances\64290aca06184fb6b59be8d2ef380ff5\mods"
+                main = "%APPDATA%\.minecraft\mods"
+            }
+        }
+        $jsonStr = $defaultConfig | ConvertTo-Json -Depth 5
+        Set-Content -Path $script:ConfigPath -Value $jsonStr -Force
+    }
+    
+    try {
+        $rawJson = Get-Content -Path $script:ConfigPath -Raw
+        $script:ConfigObj = $rawJson | ConvertFrom-Json
+        $script:ActiveProfile = $script:ConfigObj.active_profile
+        
+        $profileMods = $script:ConfigObj.profiles.PSObject.Properties[$script:ActiveProfile].Value
+        if (-not [string]::IsNullOrWhiteSpace($profileMods)) {
+            $script:MinecraftMods = [System.Environment]::ExpandEnvironmentVariables($profileMods)
+        } else {
+            $script:MinecraftMods = "$env:APPDATA\.minecraft\mods"
+        }
+    } catch {
+        Write-Host "[WARNING] Failed to parse config.json. Using fallback .minecraft\mods" -ForegroundColor Yellow
+        $script:ActiveProfile = "main"
+        $script:MinecraftMods = "$env:APPDATA\.minecraft\mods"
+    }
 }
+
+Get-ScriptConfig
 
 # Configurable remote manifest URL (e.g. GitHub Gist raw URL)
 $script:ManifestUrl = ""

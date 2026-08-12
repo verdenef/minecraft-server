@@ -1,0 +1,7 @@
+# Local configuration overrides (contains user-specific paths)
+config.json
+script/config.json
+*.json.local
+
+# SDD scratch and temp workspaces
+.superpowers/
