@@ -276,26 +276,65 @@ if (Test-Path -Path $dhConfig) {
 }
 
 # ------------------------------------------------------------------------------
-# 9. Welcome Guide & Announcements (config/welcomemessage.json5)
+# 9. Welcome Guide Datapack & Announcements (world/datapacks/server_guide)
 # ------------------------------------------------------------------------------
-$wmFile = Join-Path -Path $configDir -ChildPath "welcomemessage.json5"
-$wmJson5 = @'
+$worldFolder = Join-Path -Path $serverDir -ChildPath "hustisya para kay rene"
+$dpDir = Join-Path -Path $worldFolder -ChildPath "datapacks\server_guide"
+$dpData = Join-Path -Path $dpDir -ChildPath "data"
+
+if (-not (Test-Path -Path $dpDir)) {
+    New-Item -ItemType Directory -Path (Join-Path -Path $dpData -ChildPath "minecraft\tags\function") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path -Path $dpData -ChildPath "server_guide\function") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path -Path $dpData -ChildPath "server_guide\advancement") -Force | Out-Null
+}
+
+$mcmeta = @'
 {
-	"onlyRunOnDedicatedServers": false,
-	"sendEmptyLineBeforeFirstMessage": true,
-	"messageOneText": "=== Welcome to Hustisya Para Kay Rene SMP! ===",
-	"messageOneColourIndex": 6,
-	"messageOneOptionalURL": "",
-	"messageTwoText": "Commands: /skin set <SkinName> | /nick set &aName | Graves (30m)",
-	"messageTwoColourIndex": 14,
-	"messageTwoOptionalURL": "",
-	"messageThreeText": "Controls: [J] Map | [B] Waypoint | [G] Fullbright | [C] Zoom | [V] Voice Chat",
-	"messageThreeColourIndex": 11,
-	"messageThreeOptionalURL": ""
+  "pack": {
+    "pack_format": 61,
+    "description": "Hustisya Para Kay Rene SMP Interactive Welcome Guide Datapack"
+  }
 }
 '@
-$wmJson5 | Set-Content -Path $wmFile -Encoding UTF8
-Write-Host " -> Welcome Guide & Announcements config updated (welcomemessage.json5)!" -ForegroundColor Green
+$mcmeta | Set-Content -Path (Join-Path -Path $dpDir -ChildPath "pack.mcmeta") -Encoding UTF8
+
+'{"values": ["server_guide:load"]}' | Set-Content -Path (Join-Path -Path $dpData -ChildPath "minecraft\tags\function\load.json") -Encoding UTF8
+'{"values": ["server_guide:tick"]}' | Set-Content -Path (Join-Path -Path $dpData -ChildPath "minecraft\tags\function\tick.json") -Encoding UTF8
+
+$loadMc = @'
+scoreboard objectives add show_guide trigger "Show Server Guide"
+tellraw @a [{"text":"[Server] ","color":"gold","bold":true},{"text":"Interactive Server Guide Loaded! Type ","color":"green"},{"text":"/trigger show_guide","color":"aqua","bold":true},{"text":" to view.","color":"green"}]
+'@
+$loadMc | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\function\load.mcfunction") -Encoding UTF8
+
+$tickMc = @'
+scoreboard players enable @a show_guide
+execute as @a[scores={show_guide=1..}] run function server_guide:send_guide
+'@
+$tickMc | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\function\tick.mcfunction") -Encoding UTF8
+
+$sendGuideMc = @'
+tellraw @s ["",{"text":"==================================================\n","color":"gold","bold":true},{"text":"        Welcome to Hustisya Para Kay Rene SMP!\n","color":"gold","bold":true},{"text":"==================================================\n","color":"gold","bold":true},{"text":" 👤 Custom Skins   : ","color":"yellow","bold":true},{"text":"/skin set <SkinName>  ","color":"gray"},{"text":"[Click to Set Skin]\n","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/skin set "},"hoverEvent":{"action":"show_text","contents":"Click to open /skin command"}},{"text":" 🎨 Name Colors    : ","color":"yellow","bold":true},{"text":"/nick set &aName ","color":"gray"},{"text":"[Click to Set Color]\n","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/nick set &a"},"hoverEvent":{"action":"show_text","contents":"Click to open /nick command"}},{"text":" 🪦 Universal Grave: ","color":"yellow","bold":true},{"text":"30-min item protection on death (1-tap retrieval)\n","color":"gray"},{"text":" 🪓 Tree Harvester : ","color":"yellow","bold":true},{"text":"Break bottom log to chop & decay leaves\n","color":"gray"},{"text":" 🛌 1-Player Sleep : ","color":"yellow","bold":true},{"text":"Only 1 player needed to skip the night\n","color":"gray"},{"text":" 🪞 Shulker Preview: ","color":"yellow","bold":true},{"text":"Right-click shulker in inventory | Shift to preview\n","color":"gray"},{"text":" 🗺️ JourneyMap     : ","color":"yellow","bold":true},{"text":"[J] Full Map | [B] Waypoints | [Ctrl+B] Quick Pin\n","color":"gray"},{"text":" ⌨️ Utility Keys   : ","color":"yellow","bold":true},{"text":"[G] Fullbright | [C] Zoom | [F4] Freecam | [V] Voice\n","color":"gray"},{"text":"==================================================\n","color":"gold","bold":true},{"text":"  Type ","color":"gray"},{"text":"/trigger show_guide","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger show_guide"},"hoverEvent":{"action":"show_text","contents":"Click to re-open guide"}},{"text":" anytime in chat to re-open this guide!\n","color":"gray"},{"text":"==================================================","color":"gold","bold":true}]
+scoreboard players reset @s show_guide
+advancement revoke @s only server_guide:player_joined
+'@
+$sendGuideMc | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\function\send_guide.mcfunction") -Encoding UTF8
+
+$playerJoinedAdv = @'
+{
+  "criteria": {
+    "requirement": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "rewards": {
+    "function": "server_guide:send_guide"
+  }
+}
+'@
+$playerJoinedAdv | Set-Content -Path (Join-Path -Path $dpData -ChildPath "server_guide\advancement\player_joined.json") -Encoding UTF8
+
+Write-Host " -> Interactive Welcome Guide Datapack installed & configured!" -ForegroundColor Green
 
 Write-Host "`n[SUCCESS] Minecraft Server & Mod Configuration complete!" -ForegroundColor Green
 Write-Host ""
