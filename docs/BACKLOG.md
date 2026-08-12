@@ -7,8 +7,7 @@ This document tracks completed features, active tasks, and proposed improvements
 ## 📋 To-Do / Planned Improvements
 
 ### High Priority
-- [ ] **Dynamic Ferium Binary Resolution**: Replace hardcoded `D:\Downloads\appl\ferium.exe` with a fallback mechanism that checks `$env:PATH` or reads from a local `.env`/`config.json` file.
-- [ ] **Mod Removal Binary Cleanup**: Enhance Option 5 (`Remove a Tracked Mod`) to optionally search `%APPDATA%\.minecraft\mods` for the corresponding `.jar` file and prompt the user to remove it.
+- [ ] **Mod Removal Binary Cleanup**: Enhance Option 6 (`Remove a Tracked Mod`) to optionally search `%APPDATA%\.minecraft\mods` for the corresponding `.jar` file and prompt the user to remove it.
 
 ### Medium Priority
 - [ ] **Profile Switcher**: Add an interactive menu option to switch Ferium profiles (e.g., between different Minecraft versions or loaders like Fabric, Forge, NeoForge).
@@ -17,14 +16,16 @@ This document tracks completed features, active tasks, and proposed improvements
 
 ### Low Priority / Quality of Life
 - [ ] **Auto-Detect Minecraft Installation Path**: Allow overriding default `%APPDATA%\.minecraft` path via command-line parameter or environment variable.
-- [ ] **Batch Removal Support**: Extend Option 5 to support removing multiple mod slugs in a single batch command similar to Option 2.
+- [ ] **Batch Removal Support**: Extend Option 6 to support removing multiple mod slugs in a single batch command.
 
 ---
 
 ## ✅ Completed Tasks
 
+- [x] **1-Click Remote/Local Manifest Sync**: Implemented Option 1 `Sync-ServerMods` to auto-fetch server mod list from remote Gist/URL or local `server-mods.txt` and upgrade directly to `.minecraft/mods`.
+- [x] **Ferium Auto-Bootstrapper**: Dynamic binary resolution in `$env:LOCALAPPDATA\Ferium\ferium.exe` with automatic GitHub release zip downloading if missing.
 - [x] **Initial Script Framework**: Created interactive PowerShell CLI menu wrapper (`script/MOD_MANAGER.ps1`).
-- [x] **Batch Add Parsing**: Implemented regex-based split (`-split '[\s,]+'`) for adding multiple mods in one prompt (Options 2 & 3).
-- [x] **Modpack Self-Healing Fallback**: Implemented automatic fallback from `modpack add` to `modpack configure` if a modpack is already registered (Option 6).
-- [x] **Folder Scanner**: Integrated `ferium scan` for detecting untracked `.jar` files in the mods folder (Option 7).
+- [x] **Batch Add Parsing**: Implemented regex-based split (`-split '[\s,]+'`) for adding multiple mods in one prompt.
+- [x] **Modpack Self-Healing Fallback**: Implemented automatic fallback from `modpack add` to `modpack configure` if a modpack is already registered.
+- [x] **Folder Scanner**: Integrated `ferium scan` for detecting untracked `.jar` files in the mods folder.
 - [x] **Project Documentation**: Created `docs/PROJECT_CONTEXT.md` detailing script architecture, command mapping, and technical specs.

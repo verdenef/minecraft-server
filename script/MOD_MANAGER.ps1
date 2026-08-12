@@ -7,13 +7,13 @@
 #>
 
 # 1. Environment Setup & Validation
-$FeriumDir = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Ferium"
-$FeriumExe = Join-Path -Path $FeriumDir -ChildPath "ferium.exe"
-$MinecraftRoot = "$env:APPDATA\.minecraft"
-$MinecraftMods = "$env:APPDATA\.minecraft\mods"
+$script:FeriumDir = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Ferium"
+$script:FeriumExe = Join-Path -Path $script:FeriumDir -ChildPath "ferium.exe"
+$script:MinecraftRoot = "$env:APPDATA\.minecraft"
+$script:MinecraftMods = "$env:APPDATA\.minecraft\mods"
 
 # Configurable remote manifest URL (e.g. GitHub Gist raw URL)
-$ManifestUrl = ""
+$script:ManifestUrl = ""
 
 # Set preference to Continue so PowerShell doesn't crash on standard CLI errors
 $ErrorActionPreference = "Continue"
@@ -134,7 +134,7 @@ while ($true) {
         }
         "2" {
             Write-Host "`n[*] Checking for mod updates..." -ForegroundColor Cyan
-            & $FeriumExe upgrade
+            & $script:FeriumExe upgrade
             
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "`n[SUCCESS] Mods synchronized successfully!" -ForegroundColor Green
@@ -150,7 +150,7 @@ while ($true) {
                 
                 foreach ($mod in $mods) {
                     Write-Host "`n[*] Injecting '$mod' into profile..." -ForegroundColor Cyan
-                    & $FeriumExe add $mod
+                    & $script:FeriumExe add $mod
                     
                     if ($LASTEXITCODE -eq 0) {
                         Write-Host "[SUCCESS] Added '$mod'." -ForegroundColor Green
@@ -171,7 +171,7 @@ while ($true) {
                 $successCount = 0
                 foreach ($mod in $mods) {
                     Write-Host "`n[*] Injecting '$mod' into profile..." -ForegroundColor Cyan
-                    & $FeriumExe add $mod
+                    & $script:FeriumExe add $mod
                     
                     if ($LASTEXITCODE -eq 0) {
                         Write-Host "[SUCCESS] Added '$mod'." -ForegroundColor Green
@@ -183,7 +183,7 @@ while ($true) {
                 
                 if ($successCount -gt 0) {
                     Write-Host "`n[*] Upgrading repository..." -ForegroundColor Cyan
-                    & $FeriumExe upgrade
+                    & $script:FeriumExe upgrade
                     Write-Host "`n[SUCCESS] Profile synchronized!" -ForegroundColor Green
                 } else {
                     Write-Host "`n[ERROR] No mods were successfully added. Aborting upgrade sequence." -ForegroundColor Red
@@ -194,15 +194,15 @@ while ($true) {
         }
         "5" {
             Write-Host "`n[*] Active Mod Profile:" -ForegroundColor Cyan
-            & $FeriumExe list
+            & $script:FeriumExe list
         }
         "6" {
             Write-Host "`n[*] Active Mod Profile:" -ForegroundColor Cyan
-            & $FeriumExe list
+            & $script:FeriumExe list
             
             $removeMod = (Read-Host "`nEnter the exact name or slug of the mod to REMOVE").Trim()
             if (-not [string]::IsNullOrWhiteSpace($removeMod)) {
-                & $FeriumExe remove $removeMod
+                & $script:FeriumExe remove $removeMod
                 
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "`n[SUCCESS] Untracked '$removeMod' from the Ferium profile." -ForegroundColor Green
@@ -219,15 +219,15 @@ while ($true) {
             if (-not [string]::IsNullOrWhiteSpace($packSlug)) {
                 Write-Host "`n[*] Processing Modpack: '$packSlug'..." -ForegroundColor Cyan
                 
-                & $FeriumExe modpack add $packSlug --output-dir $MinecraftRoot
+                & $script:FeriumExe modpack add $packSlug --output-dir $MinecraftRoot
                 
                 if ($LASTEXITCODE -ne 0) {
                     Write-Host "`n[*] Modpack may already be tracked. Enforcing directory configuration to '$MinecraftRoot'..." -ForegroundColor Yellow
-                    & $FeriumExe modpack configure --output-dir $MinecraftRoot
+                    & $script:FeriumExe modpack configure --output-dir $MinecraftRoot
                 }
 
                 Write-Host "`n[*] Pulling modpack components..." -ForegroundColor Cyan
-                & $FeriumExe modpack upgrade
+                & $script:FeriumExe modpack upgrade
                 
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "`n[SUCCESS] Modpack successfully configured and installed directly to root!" -ForegroundColor Green
@@ -240,7 +240,7 @@ while ($true) {
         }
         "8" {
             Write-Host "`n[*] Scanning the mods directory for untracked .jar files..." -ForegroundColor Cyan
-            & $FeriumExe scan
+            & $script:FeriumExe scan
             
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "`n[SUCCESS] Untracked mods successfully identified and added to the Ferium profile!" -ForegroundColor Green
