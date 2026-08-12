@@ -279,6 +279,9 @@ function Sync-ServerMods {
         }
     }
     
+    # Remove sodium from Ferium auto-upgrade to prevent downloading broken 0.9.2-alpha builds
+    & $script:FeriumExe remove sodium 2>&1 | Out-Null
+    
     # Batch register all mods in a single process execution
     & $script:FeriumExe add $mods 2>&1 | Out-Null
     
@@ -287,15 +290,12 @@ function Sync-ServerMods {
     
     # Post-sync Iris-Sodium compatibility guard:
     # Iris 1.11.2 requires stable Sodium 0.9.1+mc26.2 (0.9.2-alpha is incompatible with Iris 1.11.2)
-    $alphaSodium = Get-ChildItem -Path $script:MinecraftMods -Filter "sodium-fabric-0.9.2-alpha*.jar" -ErrorAction SilentlyContinue
-    if ($alphaSodium) {
+    Get-ChildItem -Path $script:MinecraftMods -Filter "sodium-fabric-0.9.2-alpha*.jar" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    $stableTarget = Join-Path -Path $script:MinecraftMods -ChildPath "sodium-fabric-0.9.1+mc26.2.jar"
+    if (-not (Test-Path -Path $stableTarget)) {
         Write-Host "[*] Pinning Sodium to stable version 0.9.1+mc26.2 for Iris compatibility..." -ForegroundColor Yellow
-        Remove-Item -Path $alphaSodium.FullName -Force -ErrorAction SilentlyContinue
-        $stableTarget = Join-Path -Path $script:MinecraftMods -ChildPath "sodium-fabric-0.9.1+mc26.2.jar"
-        if (-not (Test-Path -Path $stableTarget)) {
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-            Invoke-WebRequest -Uri "https://cdn.modrinth.com/data/AANobbMI/versions/2Yom1N68/sodium-fabric-0.9.1%2Bmc26.2.jar" -OutFile $stableTarget
-        }
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri "https://cdn.modrinth.com/data/AANobbMI/versions/2Yom1N68/sodium-fabric-0.9.1%2Bmc26.2.jar" -OutFile $stableTarget
     }
 
     if ($LASTEXITCODE -eq 0) {
@@ -349,10 +349,11 @@ while ($true) {
     Write-Host "  8. Add / Configure & Upgrade a Modpack" -ForegroundColor Magenta
     Write-Host "  9. Scan Folder for Untracked Mods" -ForegroundColor Green
     Write-Host " 10. [CONFIG] Configure Active Instance Settings [MC Version / Loader]" -ForegroundColor DarkYellow
-    Write-Host " 11. Exit" -ForegroundColor Gray
+    Write-Host " 11. [SERVER-CONFIG] Apply Server & World Configuration (CONFIGURE_SERVER.ps1)" -ForegroundColor DarkYellow
+    Write-Host " 12. Exit" -ForegroundColor Gray
     Write-Host "==========================================" -ForegroundColor Cyan
 
-    $choice = Read-Host "`nSelect an option (1-11)"
+    $choice = Read-Host "`nSelect an option (1-12)"
 
     switch ($choice) {
         "1" {
@@ -396,47 +397,36 @@ while ($true) {
             if (-not [string]::IsNullOrWhiteSpace($inputString)) {
                 $mods = $inputString -split '[\s,]+' | Where-Object { $_ -match '\S' }
                 
-                $successCount = 0
                 foreach ($mod in $mods) {
                     Write-Host "`n[*] Injecting '$mod' into profile..." -ForegroundColor Cyan
                     & $script:FeriumExe add $mod
-                    
-                    if ($LASTEXITCODE -eq 0) {
-                        Write-Host "[SUCCESS] Added '$mod'." -ForegroundColor Green
-                        $successCount++
-                    } else {
-                        Write-Host "[ERROR] Failed to add '$mod'." -ForegroundColor Red
-                    }
                 }
+                Write-Host "`n[*] Triggering upgrade cycle to pull binaries..." -ForegroundColor Cyan
+                & $script:FeriumExe upgrade
                 
-                if ($successCount -gt 0) {
-                    Write-Host "`n[*] Upgrading repository..." -ForegroundColor Cyan
-                    & $script:FeriumExe upgrade --output-dir "$script:MinecraftMods"
-                    Write-Host "`n[SUCCESS] Profile synchronized to $script:MinecraftMods!" -ForegroundColor Green
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "`n[SUCCESS] Added and downloaded binaries for '$inputString'." -ForegroundColor Green
                 } else {
-                    Write-Host "`n[ERROR] No mods were successfully added. Aborting upgrade sequence." -ForegroundColor Red
+                    Write-Host "`n[ERROR] Upgrade failed during batch add. Review the output." -ForegroundColor Red
                 }
             } else {
                 Write-Host "`n[WARNING] Empty input detected. Operation cancelled." -ForegroundColor Yellow
             }
         }
         "6" {
-            Write-Host "`n[*] Active Mod Profile:" -ForegroundColor Cyan
+            Write-Host "`n[*] Fetching tracked mods for profile [$script:ActiveProfile]..." -ForegroundColor Cyan
             & $script:FeriumExe list
         }
         "7" {
-            Write-Host "`n[*] Active Mod Profile:" -ForegroundColor Cyan
-            & $script:FeriumExe list
-            
-            $removeMod = (Read-Host "`nEnter the exact name or slug of the mod to REMOVE").Trim()
-            if (-not [string]::IsNullOrWhiteSpace($removeMod)) {
-                & $script:FeriumExe remove $removeMod
+            $modName = (Read-Host "`nEnter mod name or ID to remove").Trim()
+            if (-not [string]::IsNullOrWhiteSpace($modName)) {
+                Write-Host "`n[*] Removing '$modName' from profile..." -ForegroundColor Cyan
+                & $script:FeriumExe remove $modName
                 
                 if ($LASTEXITCODE -eq 0) {
-                    Write-Host "`n[SUCCESS] Untracked '$removeMod' from the Ferium profile." -ForegroundColor Green
-                    Write-Host "Note: Ferium does not always delete the local binary. Verify your mods folder." -ForegroundColor Yellow
+                    Write-Host "`n[SUCCESS] Removed '$modName'." -ForegroundColor Green
                 } else {
-                    Write-Host "`n[ERROR] Failed to remove mod. Ensure you typed the identifier exactly as listed." -ForegroundColor Red
+                    Write-Host "`n[ERROR] Failed to remove '$modName'. Ensure exact name/ID matches." -ForegroundColor Red
                 }
             } else {
                 Write-Host "`n[WARNING] Empty input detected. Operation cancelled." -ForegroundColor Yellow
@@ -481,11 +471,23 @@ while ($true) {
             Set-InstanceSettings
         }
         "11" {
+            $confScript = Join-Path -Path $script:PSScriptRoot -ChildPath "CONFIGURE_SERVER.ps1"
+            if (-not (Test-Path -Path $confScript)) {
+                $confScript = Join-Path -Path $script:PSScriptRoot -ChildPath "..\script\CONFIGURE_SERVER.ps1"
+            }
+            if (Test-Path -Path $confScript) {
+                Write-Host "`n[*] Triggering Server & World Configuration..." -ForegroundColor Cyan
+                & $confScript
+            } else {
+                Write-Host "`n[ERROR] CONFIGURE_SERVER.ps1 script not found at $confScript" -ForegroundColor Red
+            }
+        }
+        "12" {
             Write-Host "`nTerminating session..." -ForegroundColor Gray
             break
         }
         Default {
-            Write-Host "`n[ERROR] Invalid selection. Awaiting input between 1 and 11." -ForegroundColor Red
+            Write-Host "`n[ERROR] Invalid selection. Awaiting input between 1 and 12." -ForegroundColor Red
         }
     }
     
