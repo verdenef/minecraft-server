@@ -42,11 +42,13 @@ The interactive menu loop (`MOD_MANAGER.ps1`) provides 10 operational workflows:
 
 1. **Git-Ignored Multi-Profile Config**:
    `Get-ScriptConfig` loads `config.json`. If missing (e.g. on a friend's PC), it auto-generates a clean default pointing to `%APPDATA%\.minecraft\mods`.
-2. **Auto-Bootstrap Installer**:
+2. **Ferium CLI Profile Synchronization**:
+   `Ensure-FeriumProfile` syncs `$script:ActiveProfile` with Ferium's internal profiles via `ferium profile list`, `ferium profile create`, `ferium profile switch`, and `ferium profile configure --output-dir <path>`.
+3. **Auto-Bootstrap Installer**:
    `Ensure-FeriumInstalled` checks for `ferium.exe` at startup. If missing, it downloads the official Windows release zip from GitHub API/Release assets and extracts it to `$env:LOCALAPPDATA\Ferium\`.
-3. **Remote & Local Manifest Fetching**:
+4. **Remote & Local Manifest Fetching**:
    `Get-ModManifest` queries `$script:ManifestUrl` using `Invoke-RestMethod`. If offline or unconfigured, it falls back to reading `script/server-mods.txt`.
-4. **Robust Batch Parsing**:
+5. **Robust Batch Parsing**:
    Uses regular expressions (`[\s,]+`) to split user input strings into individual mod identifiers, ignoring extra whitespace or comma formatting.
-5. **State Fallback & Self-Healing**:
+6. **State Fallback & Self-Healing**:
    Option 8 attempts `ferium modpack add`. If Ferium returns a non-zero exit code (indicating the pack already exists), it automatically executes `ferium modpack configure --output-dir <path>` to enforce output paths before executing `modpack upgrade`.

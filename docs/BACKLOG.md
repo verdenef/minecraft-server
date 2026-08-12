@@ -10,7 +10,6 @@ This document tracks completed features, active tasks, and proposed improvements
 - [ ] **Mod Removal Binary Cleanup**: Enhance Option 7 (`Remove a Tracked Mod`) to optionally search active mods folder for the corresponding `.jar` file and prompt the user to remove it.
 
 ### Medium Priority
-- [ ] **Ferium Profile Switcher**: Add an interactive menu option to switch Ferium profiles (e.g., between different Minecraft versions or loaders like Fabric, Forge, NeoForge).
 - [ ] **Input Sanitization & Validation**: Sanitize user inputs for mod slugs/IDs to catch invalid characters before executing `ferium add`.
 - [ ] **Logging & Export**: Option to log CLI command outputs to a `logs/` directory for debugging upgrade or scan failures.
 
@@ -21,6 +20,7 @@ This document tracks completed features, active tasks, and proposed improvements
 
 ## ✅ Completed Tasks
 
+- [x] **Ferium CLI Profile Synchronization**: Implemented `Ensure-FeriumProfile` to automatically sync script profile switching (`server` vs `main`) with Ferium CLI's internal profiles via `ferium profile list`, `profile create`, `profile switch`, and `profile configure --output-dir <path>`.
 - [x] **Multi-Instance Config & Profile Switcher**: Added `Get-ScriptConfig` and `Switch-ActiveProfile` (Option 2) with git-ignored `config.json` support. Allows seamlessly toggling between server instances (`.../instances/64290aca.../mods`) and main singleplayer instances (`.minecraft/mods`).
 - [x] **1-Click Remote/Local Manifest Sync**: Implemented Option 1 `Sync-ServerMods` to auto-fetch server mod list from remote Gist/URL or local `server-mods.txt` and upgrade directly to target mods directory.
 - [x] **Ferium Auto-Bootstrapper**: Dynamic binary resolution in `$env:LOCALAPPDATA\Ferium\ferium.exe` with automatic GitHub release zip downloading if missing.
