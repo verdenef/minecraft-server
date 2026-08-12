@@ -189,8 +189,12 @@ function Ensure-FeriumInstalled {
 Ensure-FeriumInstalled
 
 function Get-ModManifest {
+    param (
+        [string]$FileName = "server-mods.txt"
+    )
+    
     $content = ""
-    if (-not [string]::IsNullOrWhiteSpace($script:ManifestUrl)) {
+    if (-not [string]::IsNullOrWhiteSpace($script:ManifestUrl) -and $FileName -eq "server-mods.txt") {
         try {
             Write-Host "[*] Fetching remote server mod manifest from URL..." -ForegroundColor Cyan
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -203,11 +207,11 @@ function Get-ModManifest {
     if ([string]::IsNullOrWhiteSpace($content)) {
         $candidates = @()
         if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
-            $candidates += Join-Path -Path $PSScriptRoot -ChildPath "server-mods.txt"
-            $candidates += Join-Path -Path $PSScriptRoot -ChildPath "..\script\server-mods.txt"
+            $candidates += Join-Path -Path $PSScriptRoot -ChildPath $FileName
+            $candidates += Join-Path -Path $PSScriptRoot -ChildPath "..\script\$FileName"
         }
-        $candidates += "script\server-mods.txt"
-        $candidates += "server-mods.txt"
+        $candidates += "script\$FileName"
+        $candidates += $FileName
         
         $localManifest = $null
         foreach ($path in $candidates) {
@@ -221,7 +225,9 @@ function Get-ModManifest {
             Write-Host "[*] Reading local manifest from $localManifest..." -ForegroundColor Cyan
             $content = Get-Content -Path $localManifest -Raw
         } else {
-            Write-Host "[ERROR] No remote URL configured and local server-mods.txt not found!" -ForegroundColor Red
+            if ($FileName -ne "server-only-mods.txt") {
+                Write-Host "[ERROR] No remote URL configured and local $FileName not found!" -ForegroundColor Red
+            }
             return @()
         }
     }
@@ -235,13 +241,20 @@ function Get-ModManifest {
 
 function Sync-ServerMods {
     Write-Host "`n[*] Starting Server Mod Synchronization..." -ForegroundColor Cyan
+    Write-Host "[*] Target Profile: [$script:ActiveProfile]" -ForegroundColor Cyan
     Write-Host "[*] Target Mods Directory: $script:MinecraftMods" -ForegroundColor Gray
     
     if (-not (Test-Path -Path $script:MinecraftMods)) {
         New-Item -ItemType Directory -Path $script:MinecraftMods -Force | Out-Null
     }
     
-    $mods = Get-ModManifest
+    $mods = @()
+    $mods += Get-ModManifest -FileName "server-mods.txt"
+    
+    if ($script:ActiveProfile -eq "server") {
+        Write-Host "[*] Server profile active: Including server-only mods..." -ForegroundColor Yellow
+        $mods += Get-ModManifest -FileName "server-only-mods.txt"
+    }
     
     if ($mods.Count -eq 0) {
         Write-Host "[WARNING] No mods found in manifest to sync." -ForegroundColor Yellow
