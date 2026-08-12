@@ -232,14 +232,18 @@ function Get-ModManifest {
         }
     }
     
-    $mods = $content -split '[\r\n]+' | Where-Object { 
-        $line = $_.Trim()
-        $line -and -not $line.StartsWith("#")
+    $mods = $content -split '[\r\n]+' | ForEach-Object { 
+        $clean = ($_ -split '#')[0].Trim()
+        if (-not [string]::IsNullOrWhiteSpace($clean)) {
+            $clean
+        }
     }
     return $mods
 }
 
 function Sync-ServerMods {
+    Ensure-FeriumProfile
+    
     Write-Host "`n[*] Starting Server Mod Synchronization..." -ForegroundColor Cyan
     Write-Host "[*] Target Profile: [$script:ActiveProfile]" -ForegroundColor Cyan
     Write-Host "[*] Target Mods Directory: $script:MinecraftMods" -ForegroundColor Gray
@@ -251,7 +255,7 @@ function Sync-ServerMods {
     $mods = @()
     $mods += Get-ModManifest -FileName "server-mods.txt"
     
-    if ($script:ActiveProfile -eq "server") {
+    if ($script:ActiveProfile -eq "server" -or $script:ActiveProfile -like "*server*" -or $script:MinecraftMods -like "*minecraft-server*") {
         Write-Host "[*] Server profile active: Including server-only mods..." -ForegroundColor Yellow
         $mods += Get-ModManifest -FileName "server-only-mods.txt"
     }
