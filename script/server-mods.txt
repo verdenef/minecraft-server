@@ -20,16 +20,13 @@ gamma-utils
 slot-cycler
 bridging-mod
 sound-physics-remastered
-clumps
 simple-voice-chat
 easy-shulker-boxes
 stack-to-nearby-chests
-krypton
 jade
 controlling
 rightclickharvest
 rei
 jei
 freecam
-universal-graves
 trade-cycling
