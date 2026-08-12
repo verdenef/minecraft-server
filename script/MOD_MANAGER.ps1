@@ -7,21 +7,48 @@
 #>
 
 # 1. Environment Setup & Validation
-$FeriumDir = "D:\Downloads\appl"
+$FeriumDir = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Ferium"
 $FeriumExe = Join-Path -Path $FeriumDir -ChildPath "ferium.exe"
 $MinecraftRoot = "$env:APPDATA\.minecraft"
+$MinecraftMods = "$env:APPDATA\.minecraft\mods"
+
+# Configurable remote manifest URL (e.g. GitHub Gist raw URL)
+$ManifestUrl = ""
 
 # Set preference to Continue so PowerShell doesn't crash on standard CLI errors
-$ErrorActionPreference = "Continue" 
+$ErrorActionPreference = "Continue"
 
-if (-not (Test-Path -Path $FeriumExe)) {
-    Write-Host "`n[FATAL ERROR] Executable not found at expected path: $FeriumExe" -ForegroundColor Red
-    Write-Host "Verify the directory structure before executing this script." -ForegroundColor Red
-    Pause
-    exit 1
+function Ensure-FeriumInstalled {
+    if (-not (Test-Path -Path $script:FeriumExe)) {
+        Write-Host "`n[*] Ferium executable not found. Auto-downloading ferium.exe..." -ForegroundColor Yellow
+        if (-not (Test-Path -Path $script:FeriumDir)) {
+            New-Item -ItemType Directory -Path $script:FeriumDir -Force | Out-Null
+        }
+        
+        $zipUrl = "https://github.com/the-cursed-modpack/ferium/releases/latest/download/ferium-x86_64-pc-windows-msvc.zip"
+        $zipPath = Join-Path -Path $script:FeriumDir -ChildPath "ferium.zip"
+        
+        try {
+            Write-Host "[*] Downloading Ferium release from GitHub..." -ForegroundColor Cyan
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
+            
+            Write-Host "[*] Extracting Ferium..." -ForegroundColor Cyan
+            Expand-Archive -Path $zipPath -DestinationPath $script:FeriumDir -Force
+            Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
+            Write-Host "[SUCCESS] Ferium auto-installation complete!" -ForegroundColor Green
+        } catch {
+            Write-Host "[ERROR] Failed to auto-download Ferium: $_" -ForegroundColor Red
+            Write-Host "Please ensure an active internet connection or manually place ferium.exe in $script:FeriumDir" -ForegroundColor Red
+            Pause
+            exit 1
+        }
+    }
 }
 
-Set-Location -Path $FeriumDir
+Ensure-FeriumInstalled
+
+Set-Location -Path $script:FeriumDir
 
 # 2. Main Execution Loop
 while ($true) {

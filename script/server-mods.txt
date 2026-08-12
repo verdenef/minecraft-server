@@ -1,0 +1,5 @@
+# Minecraft Server Mod Manifest
+# Add Modrinth slugs or CurseForge IDs below (one per line)
+fabric-api
+sodium
+lithium
