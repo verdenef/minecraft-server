@@ -32,3 +32,4 @@ rei
 jei
 freecam
 universal-graves
+tree-harvester
