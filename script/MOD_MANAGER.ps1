@@ -73,7 +73,7 @@ function Ensure-FeriumProfile {
     
     if (-not $hasProfile) {
         Write-Host "[*] Creating Ferium CLI profile '$script:ActiveProfile'..." -ForegroundColor Cyan
-        & $script:FeriumExe profile create --name $script:ActiveProfile --output-dir "$script:MinecraftMods" --mod-loader fabric | Out-Null
+        & $script:FeriumExe profile create --name $script:ActiveProfile --output-dir "$script:MinecraftMods" --mod-loader fabric --game-version 1.21 | Out-Null
     } else {
         & $script:FeriumExe profile switch $script:ActiveProfile | Out-Null
     }
