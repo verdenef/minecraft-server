@@ -6,6 +6,10 @@
     Implements robust error handling, batch processing, state recovery, and folder scanning.
 #>
 
+# Set UTF-8 encoding for Windows Console compatibility
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 # 1. Environment Setup & Validation
 $script:FeriumDir = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Ferium"
 $script:FeriumExe = Join-Path -Path $script:FeriumDir -ChildPath "ferium.exe"
@@ -294,8 +298,8 @@ while ($true) {
     Write-Host "   Target: [$script:ActiveProfile] (MC: $script:ActiveMcVersion | $script:ActiveModLoader)" -ForegroundColor DarkCyan
     Write-Host "   Path  : $script:MinecraftMods" -ForegroundColor Gray
     Write-Host "==========================================" -ForegroundColor Cyan
-    Write-Host "  1. ⚡ 1-Click Server Mod Sync (Auto-Fetch & Upgrade)" -ForegroundColor Green
-    Write-Host "  2. 🔄 Switch Target Instance Profile [$script:ActiveProfile]" -ForegroundColor Cyan
+    Write-Host "  1. [SYNC] 1-Click Server Mod Sync (Auto-Fetch & Upgrade)" -ForegroundColor Green
+    Write-Host "  2. [SWITCH] Switch Target Instance Profile [$script:ActiveProfile]" -ForegroundColor Cyan
     Write-Host "  3. Upgrade / Sync Existing Mods" -ForegroundColor Yellow
     Write-Host "  4. Add New Mod(s) [Batch Supported]" -ForegroundColor Yellow
     Write-Host "  5. Add New Mod(s) AND Upgrade All" -ForegroundColor Yellow
@@ -303,7 +307,7 @@ while ($true) {
     Write-Host "  7. Remove a Tracked Mod" -ForegroundColor Red
     Write-Host "  8. Add / Configure & Upgrade a Modpack" -ForegroundColor Magenta
     Write-Host "  9. Scan Folder for Untracked Mods" -ForegroundColor Green
-    Write-Host " 10. ⚙️ Configure Active Instance Settings [MC Version / Loader]" -ForegroundColor DarkYellow
+    Write-Host " 10. [CONFIG] Configure Active Instance Settings [MC Version / Loader]" -ForegroundColor DarkYellow
     Write-Host " 11. Exit" -ForegroundColor Gray
     Write-Host "==========================================" -ForegroundColor Cyan
 
