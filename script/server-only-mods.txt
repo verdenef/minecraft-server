@@ -1,9 +1,0 @@
-# Minecraft Server-Only Mod Manifest
-# Add Modrinth slugs or CurseForge IDs below (one per line)
-tree-harvester
-clumps
-universal-graves
-krypton
-serversidehorror
-true-ending
-ultimate-sleep

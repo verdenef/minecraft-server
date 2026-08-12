@@ -2,6 +2,7 @@
 config.json
 script/config.json
 *.json.local
+script/server-only-mods.txt
 
 # SDD scratch and temp workspaces
 .superpowers/
