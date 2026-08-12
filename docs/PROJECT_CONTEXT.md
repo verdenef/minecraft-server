@@ -11,8 +11,8 @@ The central component is the interactive PowerShell script located at [`script/M
 
 - **Ferium Directory**: `$env:LOCALAPPDATA\Ferium` (auto-created)
 - **Ferium Executable**: `$env:LOCALAPPDATA\Ferium\ferium.exe` (auto-downloaded from GitHub releases if missing)
-- **Target Minecraft Root**: `$env:APPDATA\.minecraft` (`%APPDATA%\.minecraft`)
-- **Target Minecraft Mods**: `$env:APPDATA\.minecraft\mods`
+- **Instance Directory Override**: Configurable `$script:InstanceDir` (e.g. `C:\Users\Red\AppData\Roaming\.minecraft\instances\64290aca06184fb6b59be8d2ef380ff5`). Defaults to standard `%APPDATA%\.minecraft` if unconfigured/missing.
+- **Target Minecraft Mods**: `$script:MinecraftMods` (`<InstanceDir>\mods` or `%APPDATA%\.minecraft\mods`)
 - **Manifest URL**: Configurable `$script:ManifestUrl` (defaults to local `script/server-mods.txt` fallback)
 - **Target Loader / Version**: Fabric (Profile reference: Fabric 26.2)
 - **PowerShell Error Preference**: `$ErrorActionPreference = "Continue"`
