@@ -207,13 +207,13 @@ $tabObj = [ordered]@{
         "passthrough"               = $false
         "hidden"                   = $false
         "format"                   = "%player:displayname%"
-        "right_text"               = "<gray>Deaths: <red>%statistic:deaths%</red> | Playtime: <gold>%statistic:play_time%</gold> | Ping: <green>%player:ping%ms</green></gray>"
+        "right_text"               = "<gray>Deaths: <red>%player:statistic deaths%</red> | Playtime: <gold>%player:statistic play_time%</gold> | Ping: <green>%player:ping%ms</green></gray>"
         "update_on_chat_message"   = $false
         "update_tick_time"         = 20
     }
     "client_show_in_singleplayer" = $true
 }
-$tabObj | ConvertTo-Json -Depth 5 | Set-Content -Path $tabConfig -Encoding UTF8
+($tabObj | ConvertTo-Json -Depth 5).Replace('\u003c', '<').Replace('\u003e', '>') | Set-Content -Path $tabConfig -Encoding UTF8
 
 $stylesDir = Join-Path -Path $tabDir -ChildPath "styles"
 if (-not (Test-Path -Path $stylesDir)) { New-Item -ItemType Directory -Path $stylesDir -Force | Out-Null }
