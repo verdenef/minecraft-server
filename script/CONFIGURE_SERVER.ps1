@@ -350,8 +350,8 @@ $sendGuideMc = @'
 tellraw @s {"text":"==================================================","color":"gold","bold":true}
 tellraw @s {"text":"        Welcome to Hustisya Para Kay Rene SMP!","color":"gold","bold":true}
 tellraw @s {"text":"==================================================","color":"gold","bold":true}
-tellraw @s ["",{"text":" [Custom Skins]    : ","color":"yellow","bold":true},{"text":"/skin set <SkinName>  ","color":"gray"},{"text":"[Click to Set Skin]","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/skin set "},"hoverEvent":{"action":"show_text","value":"Click to open /skin command"}}]
-tellraw @s ["",{"text":" [Name Colors]     : ","color":"yellow","bold":true},{"text":"/nick set &aName ","color":"gray"},{"text":"[Click to Set Color]","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/nick set &a"},"hoverEvent":{"action":"show_text","value":"Click to open /nick command"}}]
+tellraw @s ["",{"text":" [Custom Skins]    : ","color":"yellow","bold":true},{"text":"/skin set <SkinName> or /skin url <PNG_URL>","color":"gray"}]
+tellraw @s ["",{"text":" [Name Colors]     : ","color":"yellow","bold":true},{"text":"/nick set &aName or /nick set <gradient:#ff4500:#ffa500>Name</gradient>","color":"gray"}]
 tellraw @s ["",{"text":" [Universal Grave] : ","color":"yellow","bold":true},{"text":"30-min item protection on death (1-tap retrieval)","color":"gray"}]
 tellraw @s ["",{"text":" [Tree Harvester]  : ","color":"yellow","bold":true},{"text":"Break bottom log to chop & decay leaves","color":"gray"}]
 tellraw @s ["",{"text":" [1-Player Sleep]  : ","color":"yellow","bold":true},{"text":"Only 1 player needed to skip the night","color":"gray"}]
