@@ -497,14 +497,84 @@ while ($true) {
             }
         }
         "9" {
-            Write-Host "`n[*] Scanning the mods directory for untracked .jar files..." -ForegroundColor Cyan
-            & $script:FeriumExe scan
+            Write-Host "`n[*] Scanning '$script:MinecraftMods' for untracked .jar files..." -ForegroundColor Cyan
             
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "`n[SUCCESS] Untracked mods successfully identified and added to the Ferium profile!" -ForegroundColor Green
-                Write-Host "Run Option 1 or 3 (Upgrade) to verify and sync them moving forward." -ForegroundColor Yellow
+            # Attempt native Ferium scan first
+            $feriumScan = & $script:FeriumExe scan 2>&1 | Out-String
+            if ($LASTEXITCODE -eq 0 -and $feriumScan -notmatch "error decoding response body") {
+                Write-Host $feriumScan
+                Write-Host "`n[SUCCESS] Untracked mods identified by Ferium!" -ForegroundColor Green
             } else {
-                Write-Host "`n[ERROR] The scan encountered an issue. Review the console trace." -ForegroundColor Red
+                Write-Host "[*] Falling back to PowerShell Resilient Mod Scanner..." -ForegroundColor Yellow
+                Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
+                
+                $manifestMods = @()
+                $manifestMods += Get-ModManifest -FileName "server-mods.txt"
+                $manifestMods += Get-ModManifest -FileName "server-only-mods.txt"
+                
+                $profileList = & $script:FeriumExe list 2>&1 | Out-String
+                
+                if (-not (Test-Path -Path $script:MinecraftMods)) {
+                    Write-Host "[ERROR] Target mods directory does not exist: $script:MinecraftMods" -ForegroundColor Red
+                } else {
+                    $jars = Get-ChildItem -Path $script:MinecraftMods -Filter "*.jar" -File
+                    $untrackedJars = @()
+                    
+                    foreach ($jar in $jars) {
+                        $modId = $null
+                        $modName = $null
+                        try {
+                            $zip = [System.IO.Compression.ZipFile]::OpenRead($jar.FullName)
+                            $entry = $zip.Entries | Where-Object { $_.FullName -eq "fabric.mod.json" }
+                            if ($entry) {
+                                $stream = $entry.Open()
+                                $reader = New-Object System.IO.StreamReader($stream)
+                                $jsonText = $reader.ReadToEnd()
+                                $reader.Close()
+                                $stream.Close()
+                                $modJson = $jsonText | ConvertFrom-Json
+                                $modId = $modJson.id
+                                $modName = $modJson.name
+                            }
+                            $zip.Dispose()
+                        } catch {}
+                        
+                        $isTracked = $false
+                        foreach ($tm in $manifestMods) {
+                            if (($modId -and $modId -eq $tm) -or ($jar.Name -like "*$tm*")) {
+                                $isTracked = $true
+                                break
+                            }
+                        }
+                        if (-not $isTracked -and $modId -and ($profileList -match "\b$modId\b")) {
+                            $isTracked = $true
+                        }
+                        
+                        if (-not $isTracked) {
+                            $untrackedJars += [pscustomobject]@{
+                                File = $jar.Name
+                                ID   = if ($modId) { $modId } else { "Unknown" }
+                                Name = if ($modName) { $modName } else { $jar.BaseName }
+                            }
+                        }
+                    }
+                    
+                    if ($untrackedJars.Count -eq 0) {
+                        Write-Host "`n[SUCCESS] All $($jars.Count) mod jar files in directory are tracked!" -ForegroundColor Green
+                    } else {
+                        Write-Host "`n[NOTICE] Found $($untrackedJars.Count) untracked mod jar file(s):" -ForegroundColor Yellow
+                        $untrackedJars | Format-Table -AutoSize
+                        
+                        $autoAdd = (Read-Host "`nWould you like to register untracked mod IDs to profile '$script:ActiveProfile'? (y/n)").Trim().ToLower()
+                        if ($autoAdd -eq 'y' -or $autoAdd -eq 'yes') {
+                            $toAdd = $untrackedJars | Where-Object { $_.ID -ne "Unknown" } | Select-Object -ExpandProperty ID
+                            if ($toAdd.Count -gt 0) {
+                                & $script:FeriumExe add $toAdd
+                                Write-Host "[SUCCESS] Added $($toAdd.Count) mod(s) to profile '$script:ActiveProfile'!" -ForegroundColor Green
+                            }
+                        }
+                    }
+                }
             }
         }
         "10" {
