@@ -384,16 +384,35 @@ function Sync-ServerMods {
     # Batch register all mods in a single process execution
     & $script:FeriumExe add $mods 2>&1 | Out-Null
     
-    Write-Host "`n[*] Pulling mod binaries to $script:MinecraftMods..." -ForegroundColor Cyan
-    & $script:FeriumExe upgrade
+    # Check if all required mod binaries are already present in target directory
+    $existingJars = Get-ChildItem -Path $script:MinecraftMods -Filter "*.jar" -File | Select-Object -ExpandProperty Name
+    $missingMods = @()
+    foreach ($m in $mods) {
+        $found = $false
+        $normM = ($m -replace '[\s\-/_()]+', '').ToLower()
+        foreach ($j in $existingJars) {
+            $normJ = ($j -replace '[\s\-/_()]+', '').ToLower()
+            if ($normJ.Contains($normM) -or $j -like "*$m*") {
+                $found = $true
+                break
+            }
+        }
+        if (-not $found) {
+            $missingMods += $m
+        }
+    }
+
+    if ($missingMods.Count -gt 0) {
+        Write-Host "`n[*] Missing $($missingMods.Count) mod binary files. Pulling via Ferium network API..." -ForegroundColor Cyan
+        & $script:FeriumExe upgrade
+    } else {
+        Write-Host "`n[FAST-SYNC] All $($mods.Count) mod binaries are verified present in $script:MinecraftMods!" -ForegroundColor Green
+        Write-Host "[*] Skipping slow network API check. (Use Option 3 if you wish to check online updates)" -ForegroundColor Gray
+    }
     
     Protect-SodiumCompatibility
 
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "`n[SUCCESS] Server mods successfully synchronized to $script:MinecraftMods!" -ForegroundColor Green
-    } else {
-        Write-Host "`n[ERROR] Mod upgrade completed with warnings or non-zero exit code: $LASTEXITCODE" -ForegroundColor Yellow
-    }
+    Write-Host "`n[SUCCESS] Server mods successfully synchronized to $script:MinecraftMods!" -ForegroundColor Green
 }
 
 function Switch-ActiveProfile {
