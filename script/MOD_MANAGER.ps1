@@ -79,8 +79,14 @@ function Get-ScriptConfig {
             $script:ActiveModLoader = "fabric"
         } elseif ($null -ne $profileData) {
             $script:MinecraftMods = [System.Environment]::ExpandEnvironmentVariables($profileData.path)
-            $script:ActiveMcVersion = if (-not [string]::IsNullOrWhiteSpace($profileData.mc_version)) { $profileData.mc_version } else { "26.2" }
-            $script:ActiveModLoader = if (-not [string]::IsNullOrWhiteSpace($profileData.mod_loader)) { $profileData.mod_loader } else { "fabric" }
+            $script:ActiveMcVersion = "26.2"
+            if (-not [string]::IsNullOrWhiteSpace($profileData.mc_version)) {
+                $script:ActiveMcVersion = $profileData.mc_version
+            }
+            $script:ActiveModLoader = "fabric"
+            if (-not [string]::IsNullOrWhiteSpace($profileData.mod_loader)) {
+                $script:ActiveModLoader = $profileData.mod_loader
+            }
         } else {
             $script:MinecraftMods = "$env:APPDATA\.minecraft\mods"
             $script:ActiveMcVersion = "26.2"
@@ -94,7 +100,7 @@ function Get-ScriptConfig {
         $script:ActiveModLoader = "fabric"
     }
     
-    Ensure-FeriumProfile
+    Initialize-FeriumProfile
 }
 
 function Set-InstanceSettings {
@@ -134,7 +140,7 @@ function Set-InstanceSettings {
     Write-Host "[*] MC Version: $script:ActiveMcVersion | Mod Loader: $script:ActiveModLoader" -ForegroundColor Green
 }
 
-function Ensure-FeriumProfile {
+function Initialize-FeriumProfile {
     if (-not (Test-Path -Path $script:FeriumExe)) {
         return
     }
@@ -182,7 +188,7 @@ function Ensure-FeriumProfile {
 # Set preference to Continue so PowerShell doesn't crash on standard CLI errors
 $ErrorActionPreference = "Continue"
 
-function Ensure-FeriumInstalled {
+function Initialize-FeriumInstalled {
     $script:FeriumExe = Get-FeriumExePath
     if (Test-Path -Path $script:FeriumExe) {
         Write-Host "[*] Using Ferium executable: $script:FeriumExe" -ForegroundColor Gray
@@ -216,7 +222,7 @@ function Ensure-FeriumInstalled {
 }
 
 # Ensure Ferium binary is downloaded and ready BEFORE configuring profiles
-Ensure-FeriumInstalled
+Initialize-FeriumInstalled
 Get-ScriptConfig
 
 function Get-ModManifest {
