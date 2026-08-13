@@ -624,7 +624,14 @@ while ($true) {
                             $zip.Dispose()
                         } catch {}
                         
-                        $slug = if ($modId -and $aliasMap.ContainsKey($modId)) { $aliasMap[$modId] } else { if ($modId) { $modId.Replace('_', '-') } else { $null } }
+                        $slug = $null
+                        if ($modId) {
+                            if ($aliasMap.ContainsKey($modId)) {
+                                $slug = $aliasMap[$modId]
+                            } else {
+                                $slug = $modId.Replace('_', '-')
+                            }
+                        }
                         
                         $isTracked = $false
                         $checkTerms = @($modId, $slug, $modName, $jar.BaseName) | Where-Object { $_ }
@@ -653,10 +660,15 @@ while ($true) {
                         }
                         
                         if (-not $isTracked) {
+                            $displayId = "Unknown"
+                            if (-not [string]::IsNullOrWhiteSpace($modId)) { $displayId = $modId }
+                            $displayName = $jar.BaseName
+                            if (-not [string]::IsNullOrWhiteSpace($modName)) { $displayName = $modName }
+                            
                             $untrackedJars += [pscustomobject]@{
                                 File = $jar.Name
-                                ID   = if ($modId) { $modId } else { "Unknown" }
-                                Name = if ($modName) { $modName } else { $jar.BaseName }
+                                ID   = $displayId
+                                Name = $displayName
                             }
                         }
                     }
@@ -674,7 +686,12 @@ while ($true) {
                             
                             foreach ($uJar in ($untrackedJars | Where-Object { $_.ID -ne "Unknown" })) {
                                 $rawId = $uJar.ID
-                                $slug = if ($aliasMap.ContainsKey($rawId)) { $aliasMap[$rawId] } else { $rawId.Replace('_', '-') }
+                                $slug = $null
+                                if ($aliasMap.ContainsKey($rawId)) {
+                                    $slug = $aliasMap[$rawId]
+                                } else {
+                                    $slug = $rawId.Replace('_', '-')
+                                }
                                 
                                 if ($slug -like "curseforge:*") {
                                     $cfId = ($slug -split ':')[1]
