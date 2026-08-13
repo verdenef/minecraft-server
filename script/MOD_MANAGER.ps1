@@ -265,6 +265,38 @@ function Sync-ServerMods {
         return
     }
     
+    # Fast local cache sync from server mods directory if available
+    $serverModsDir = "D:\Games\minecraft-server\mods"
+    if ((Test-Path -Path $serverModsDir) -and ($serverModsDir -ne $script:MinecraftMods)) {
+        Write-Host "[*] Fast-syncing cached mod jars from $serverModsDir to $script:MinecraftMods..." -ForegroundColor Yellow
+        $serverOnlyList = Get-ModManifest -FileName "server-only-mods.txt"
+        $isServer = ($script:ActiveProfile -eq "server" -or $script:ActiveProfile -like "*server*" -or $script:MinecraftMods -like "*minecraft-server*")
+        
+        $jars = Get-ChildItem -Path $serverModsDir -Filter "*.jar" -File
+        $copiedCount = 0
+        foreach ($jar in $jars) {
+            $isServerOnly = $false
+            if (-not $isServer) {
+                foreach ($soMod in $serverOnlyList) {
+                    if ($jar.Name -like "*$soMod*") {
+                        $isServerOnly = $true
+                        break
+                    }
+                }
+            }
+            if (-not $isServerOnly) {
+                $dest = Join-Path -Path $script:MinecraftMods -ChildPath $jar.Name
+                if (-not (Test-Path -Path $dest)) {
+                    Copy-Item -Path $jar.FullName -Destination $dest -Force
+                    $copiedCount++
+                }
+            }
+        }
+        if ($copiedCount -gt 0) {
+            Write-Host "[FAST-SYNC] Instantly mirrored $copiedCount mod jar files to $script:MinecraftMods!" -ForegroundColor Green
+        }
+    }
+    
     Write-Host "[*] Registering $($mods.Count) mods into Ferium profile..." -ForegroundColor Cyan
     $profileList = & $script:FeriumExe list 2>&1 | Out-String
     foreach ($mod in $mods) {
