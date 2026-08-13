@@ -381,8 +381,22 @@ function Sync-ServerMods {
     
     Protect-SodiumCompatibility
     
-    # Batch register all mods in a single process execution
-    & $script:FeriumExe add $mods 2>&1 | Out-Null
+    # Filter $mods to only register mods that are not already tracked in the Ferium profile
+    $untrackedModsToAdd = @()
+    $normProfile = ($profileList -replace '[\s\-/_()]+', '').ToLower()
+    foreach ($mod in $mods) {
+        $normMod = ($mod -replace '[\s\-/_()]+', '').ToLower()
+        if (-not ($profileList -match "(?i)\b$mod\b" -or ($normMod.Length -gt 3 -and $normProfile.Contains($normMod)))) {
+            $untrackedModsToAdd += $mod
+        }
+    }
+    
+    if ($untrackedModsToAdd.Count -gt 0) {
+        Write-Host "[*] Registering $($untrackedModsToAdd.Count) new mod(s) into Ferium profile..." -ForegroundColor Cyan
+        & $script:FeriumExe add $untrackedModsToAdd 2>&1 | Out-Null
+    } else {
+        Write-Host "[*] All $($mods.Count) manifest mods are already registered in Ferium profile!" -ForegroundColor Green
+    }
     
     # Check if all required mod binaries are already present in target directory
     $existingJars = Get-ChildItem -Path $script:MinecraftMods -Filter "*.jar" -File | Select-Object -ExpandProperty Name
