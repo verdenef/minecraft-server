@@ -310,7 +310,7 @@ function Protect-SodiumCompatibility {
 }
 
 function Sync-ServerMods {
-    Ensure-FeriumProfile
+    Initialize-FeriumProfile
     
     Write-Host "`n[*] Starting Server Mod Synchronization..." -ForegroundColor Cyan
     Write-Host "[*] Target Profile: [$script:ActiveProfile]" -ForegroundColor Cyan
