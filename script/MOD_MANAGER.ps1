@@ -567,10 +567,43 @@ while ($true) {
                         
                         $autoAdd = (Read-Host "`nWould you like to register untracked mod IDs to profile '$script:ActiveProfile'? (y/n)").Trim().ToLower()
                         if ($autoAdd -eq 'y' -or $autoAdd -eq 'yes') {
-                            $toAdd = $untrackedJars | Where-Object { $_.ID -ne "Unknown" } | Select-Object -ExpandProperty ID
+                            $aliasMap = @{
+                                "voicechat" = "voice-chat"
+                                "roughlyenoughitems" = "rei"
+                                "easyshulkerboxes" = "easy-shulker-boxes"
+                                "inventoryprofilesnext" = "inventory-profiles-next"
+                                "yet_another_config_lib_v3" = "yacl"
+                                "lambdynlights" = "lambdynamiclights"
+                                "bridgingmod" = "bridging-mod"
+                                "do_a_barrel_roll" = "do-a-barrel-roll"
+                                "graves" = "universal-graves"
+                                "slotcycler" = "slot-cycler"
+                                "puzzleslib" = "puzzles-lib"
+                                "forgeconfigapiport" = "forge-config-api-port"
+                                "elytratrims" = "elytra-trims"
+                                "entity_model_features" = "entity-model-features"
+                                "entity_texture_features" = "entity-texture-features"
+                                "buildguide" = "build-guide"
+                                "horsestatsmod" = "horse-statistics"
+                                "horseexpert" = "horse-expert"
+                                "seethroughlava" = "see-through-waterlava"
+                                "justzoom" = "just-zoom"
+                                "spear_boost" = "spear-boost"
+                                "invsearch_storage_indexer" = "invsearch"
+                                "customskinloader-bootstrap" = "custom-skin-loader"
+                            }
+                            
+                            $toAdd = @()
+                            foreach ($uJar in ($untrackedJars | Where-Object { $_.ID -ne "Unknown" })) {
+                                $rawId = $uJar.ID
+                                $slug = if ($aliasMap.ContainsKey($rawId)) { $aliasMap[$rawId] } else { $rawId.Replace('_', '-') }
+                                $toAdd += $slug
+                            }
+                            
                             if ($toAdd.Count -gt 0) {
+                                Write-Host "[*] Registering $($toAdd.Count) Modrinth project slugs to profile '$script:ActiveProfile'..." -ForegroundColor Cyan
                                 & $script:FeriumExe add $toAdd
-                                Write-Host "[SUCCESS] Added $($toAdd.Count) mod(s) to profile '$script:ActiveProfile'!" -ForegroundColor Green
+                                Write-Host "[SUCCESS] Added untracked mod(s) to profile '$script:ActiveProfile'!" -ForegroundColor Green
                             }
                         }
                     }
