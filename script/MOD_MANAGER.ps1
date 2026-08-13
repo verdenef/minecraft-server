@@ -29,7 +29,7 @@ function Get-ScriptConfig {
     
     if (-not (Test-Path -Path $script:ConfigPath)) {
         $defaultConfig = [ordered]@{
-            active_profile = "server"
+            active_profile = "main"
             profiles = [ordered]@{
                 server = [ordered]@{
                     path = "D:\Games\minecraft-server\mods"
