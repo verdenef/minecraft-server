@@ -743,8 +743,6 @@ while ($true) {
                                 }
                             }
                             
-                            $allAddedSlugs = @($toAddModrinth) + @($toAddCurseForge)
-                            
                             if ($toAddModrinth.Count -gt 0) {
                                 Write-Host "[*] Registering $($toAddModrinth.Count) Modrinth project slugs to profile '$script:ActiveProfile'..." -ForegroundColor Cyan
                                 & $script:FeriumExe add modrinth $toAddModrinth 2>&1 | Out-Null
@@ -753,18 +751,6 @@ while ($true) {
                             if ($toAddCurseForge.Count -gt 0) {
                                 Write-Host "[*] Registering $($toAddCurseForge.Count) CurseForge project IDs to profile '$script:ActiveProfile'..." -ForegroundColor Cyan
                                 & $script:FeriumExe add curseforge $toAddCurseForge 2>&1 | Out-Null
-                            }
-                            
-                            # Permanently persist registered mods to server-mods.txt so they never disappear even if session is interrupted
-                            $manifestFile = Join-Path -Path $script:PSScriptRoot -ChildPath "server-mods.txt"
-                            if (Test-Path -Path $manifestFile) {
-                                $existingManifest = Get-Content -Path $manifestFile
-                                foreach ($slugToAdd in $allAddedSlugs) {
-                                    if ($existingManifest -notcontains $slugToAdd) {
-                                        Add-Content -Path $manifestFile -Value $slugToAdd
-                                    }
-                                }
-                                Write-Host "[MANIFEST] Saved registered mods to server-mods.txt manifest on disk!" -ForegroundColor Green
                             }
                             
                             Write-Host "[SUCCESS] Added untracked mod(s) to profile '$script:ActiveProfile'!" -ForegroundColor Green
