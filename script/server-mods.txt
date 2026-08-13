@@ -39,4 +39,4 @@ rei
 freecam
 trade-cycling
 1374153 #punchy
-player-locator-plus
+1337256 #player-locator-plus
