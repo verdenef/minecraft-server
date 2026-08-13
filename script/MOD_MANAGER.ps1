@@ -508,11 +508,45 @@ while ($true) {
                 Write-Host "[*] Falling back to PowerShell Resilient Mod Scanner..." -ForegroundColor Yellow
                 Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
                 
+                $aliasMap = @{
+                    "voicechat" = "simple-voice-chat"
+                    "roughlyenoughitems" = "rei"
+                    "easyshulkerboxes" = "easy-shulker-boxes"
+                    "inventoryprofilesnext" = "inventory-profiles-next"
+                    "yet_another_config_lib_v3" = "yacl"
+                    "lambdynlights" = "lambdynamiclights"
+                    "bridgingmod" = "bridging-mod"
+                    "do_a_barrel_roll" = "do-a-barrel-roll"
+                    "graves" = "universal-graves"
+                    "slotcycler" = "slot-cycler"
+                    "puzzleslib" = "puzzles-lib"
+                    "forgeconfigapiport" = "forge-config-api-port"
+                    "elytratrims" = "elytra-trims"
+                    "entity_model_features" = "entity-model-features"
+                    "entity_texture_features" = "entitytexturefeatures"
+                    "buildguide" = "build-guide"
+                    "horsestatsmod" = "curseforge:409126"
+                    "horseexpert" = "horse-expert"
+                    "seethroughlava" = "curseforge:460519"
+                    "autoreconnectrf" = "curseforge:1049892"
+                    "elytra-chestplate-swapper" = "curseforge:473125"
+                    "infinitetrading" = "infinite-trading"
+                    "justzoom" = "just-zoom"
+                    "spear_boost" = "curseforge:1526956"
+                    "betteranimationscollection" = "curseforge:323976"
+                    "invsearch_storage_indexer" = "invsearch"
+                    "customskinloader-bootstrap" = "customskinloader"
+                    "cyclepaintings" = "c85whkNB"
+                    "autoclicker" = "curseforge:445095"
+                    "punchy" = "curseforge:1374153"
+                }
+                
                 $manifestMods = @()
                 $manifestMods += Get-ModManifest -FileName "server-mods.txt"
                 $manifestMods += Get-ModManifest -FileName "server-only-mods.txt"
                 
                 $profileList = & $script:FeriumExe list 2>&1 | Out-String
+                $normProfileText = ($profileList -replace '[\s\-/_()]+', '').ToLower()
                 
                 if (-not (Test-Path -Path $script:MinecraftMods)) {
                     Write-Host "[ERROR] Target mods directory does not exist: $script:MinecraftMods" -ForegroundColor Red
@@ -555,11 +589,12 @@ while ($true) {
                             if ($isTracked) { break }
                         }
                         
-                        # 2. Check against Ferium active profile list
+                        # 2. Check against Ferium active profile list (with fuzzy normalized string matching)
                         if (-not $isTracked) {
                             foreach ($term in $checkTerms) {
                                 $escaped = [regex]::Escape($term)
-                                if ($profileList -match "(?i)$escaped") {
+                                $normTerm = ($term -replace '[\s\-/_()]+', '').ToLower()
+                                if (($profileList -match "(?i)$escaped") -or ($normTerm.Length -gt 3 -and $normProfileText.Contains($normTerm))) {
                                     $isTracked = $true
                                     break
                                 }
@@ -583,36 +618,6 @@ while ($true) {
                         
                         $autoAdd = (Read-Host "`nWould you like to register untracked mod IDs to profile '$script:ActiveProfile'? (y/n)").Trim().ToLower()
                         if ($autoAdd -eq 'y' -or $autoAdd -eq 'yes') {
-                            $aliasMap = @{
-                                "voicechat" = "simple-voice-chat"
-                                "roughlyenoughitems" = "rei"
-                                "easyshulkerboxes" = "easy-shulker-boxes"
-                                "inventoryprofilesnext" = "inventory-profiles-next"
-                                "yet_another_config_lib_v3" = "yacl"
-                                "lambdynlights" = "lambdynamiclights"
-                                "bridgingmod" = "bridging-mod"
-                                "do_a_barrel_roll" = "do-a-barrel-roll"
-                                "graves" = "universal-graves"
-                                "slotcycler" = "slot-cycler"
-                                "puzzleslib" = "puzzles-lib"
-                                "forgeconfigapiport" = "forge-config-api-port"
-                                "elytratrims" = "elytra-trims"
-                                "entity_model_features" = "entity-model-features"
-                                "entity_texture_features" = "entitytexturefeatures"
-                                "buildguide" = "build-guide"
-                                "horsestatsmod" = "horse-statistics"
-                                "horseexpert" = "horse-expert"
-                                "seethroughlava" = "see-through-waterlava"
-                                "justzoom" = "just-zoom"
-                                "spear_boost" = "curseforge:1526956"
-                                "betteranimationscollection" = "curseforge:323976"
-                                "invsearch_storage_indexer" = "invsearch"
-                                "customskinloader-bootstrap" = "customskinloader"
-                                "cyclepaintings" = "c85whkNB"
-                                "autoclicker" = "curseforge:445095"
-                                "punchy" = "curseforge:1374153"
-                            }
-                            
                             $toAddModrinth = @()
                             $toAddCurseForge = @()
                             
