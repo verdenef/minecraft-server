@@ -325,10 +325,10 @@ scoreboard players add #server tip_index 1
 execute if score #server tip_index matches 7.. run scoreboard players set #server tip_index 1
 
 # Tip 1: Skins
-execute if score #server tip_index matches 1 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Change your skin anytime! Type ","color":"yellow"},{"text":"/skin set <SkinName>","color":"aqua","bold":true,"clickEvent":{"action":"suggest_command","value":"/skin set "},"hoverEvent":{"action":"show_text","contents":"Click to use /skin"}},{"text":" or use a PNG link with /skin url <URL>","color":"yellow"}]
+execute if score #server tip_index matches 1 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Change your skin anytime! Type ","color":"yellow"},{"text":"/skin set <SkinName>","color":"aqua","bold":true,"clickEvent":{"action":"suggest_command","value":"/skin set "},"hoverEvent":{"action":"show_text","value":"Click to use /skin"}},{"text":" or use a PNG link with /skin url <URL>","color":"yellow"}]
 
 # Tip 2: Nicknames & Colors
-execute if score #server tip_index matches 2 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Customize your chat & TAB name color! Type ","color":"yellow"},{"text":"/nick set &aName","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/nick set &a"},"hoverEvent":{"action":"show_text","contents":"Click to use /nick"}},{"text":" or use gradients like <gradient:#ff4500:#ffa500>Name</gradient>!","color":"yellow"}]
+execute if score #server tip_index matches 2 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Customize your chat & TAB name color! Type ","color":"yellow"},{"text":"/nick set &aName","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/nick set &a"},"hoverEvent":{"action":"show_text","value":"Click to use /nick"}},{"text":" or use gradients like <gradient:#ff4500:#ffa500>Name</gradient>!","color":"yellow"}]
 
 # Tip 3: Universal Graves
 execute if score #server tip_index matches 3 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Died far from home? Your items are safe in a Grave for 30 minutes! Right-click 1-tap to retrieve everything.","color":"yellow"}]
@@ -340,25 +340,15 @@ execute if score #server tip_index matches 4 run tellraw @a ["",{"text":"[TIP] "
 execute if score #server tip_index matches 5 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Inventory Shortcuts: Right-click a Shulker Box directly inside your inventory to open it! Press [R] in inventory/chest to auto-sort.","color":"yellow"}]
 
 # Tip 6: Keybinds & Navigation
-execute if score #server tip_index matches 6 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Controls: [J] Map | [B] Waypoint | [G] Fullbright | [C] Zoom | [F4] Freecam | [V] Voice Chat. Type ","color":"yellow"},{"text":"/trigger show_guide","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger show_guide"}},{"text":" for full guide!","color":"yellow"}]
+execute if score #server tip_index matches 6 run tellraw @a ["",{"text":"[TIP] ","color":"gold","bold":true},{"text":"Controls: [J] Map | [B] Waypoint | [G] Fullbright | [C] Zoom | [F4] Freecam | [V] Voice Chat. Type ","color":"yellow"},{"text":"/trigger show_guide","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger show_guide"},"hoverEvent":{"action":"show_text","value":"Click to re-open guide"}},{"text":" for full guide!","color":"yellow"}]
 '@
 [System.IO.File]::WriteAllText((Join-Path -Path $dpData -ChildPath "server_guide\function\broadcast_tip.mcfunction"), $broadcastMc, $utf8NoBom)
 
 $sendGuideMc = @'
-tellraw @s {"text":"==================================================","color":"gold","bold":true}
-tellraw @s {"text":"        Welcome to Hustisya Para Kay Rene SMP!","color":"gold","bold":true}
-tellraw @s {"text":"==================================================","color":"gold","bold":true}
-tellraw @s ["",{"text":" [Skins]          : ","color":"yellow","bold":true},{"text":"/skin set <SkinName>  ","color":"gray"},{"text":"[Click to Set Skin]","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/skin set "},"hoverEvent":{"action":"show_text","contents":"Click to open /skin command"}}]
-tellraw @s ["",{"text":" [Nicknames]      : ","color":"yellow","bold":true},{"text":"/nick set &aName ","color":"gray"},{"text":"[Click to Set Color]","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/nick set &a"},"hoverEvent":{"action":"show_text","contents":"Click to open /nick command"}}]
-tellraw @s ["",{"text":" [Universal Grave]: ","color":"yellow","bold":true},{"text":"30-min item protection on death (1-tap retrieval)","color":"gray"}]
-tellraw @s ["",{"text":" [Tree Harvester] : ","color":"yellow","bold":true},{"text":"Break bottom log to chop & decay leaves","color":"gray"}]
-tellraw @s ["",{"text":" [1-Player Sleep] : ","color":"yellow","bold":true},{"text":"Only 1 player needed to skip the night","color":"gray"}]
-tellraw @s ["",{"text":" [Shulker Open]   : ","color":"yellow","bold":true},{"text":"Right-click shulker in inventory | Shift to preview","color":"gray"}]
-tellraw @s ["",{"text":" [JourneyMap]     : ","color":"yellow","bold":true},{"text":"[J] Full Map | [B] Waypoints | [Ctrl+B] Quick Pin","color":"gray"}]
-tellraw @s ["",{"text":" [Utility Keys]   : ","color":"yellow","bold":true},{"text":"[G] Fullbright | [C] Zoom | [F4] Freecam | [V] Voice","color":"gray"}]
-tellraw @s {"text":"==================================================","color":"gold","bold":true}
-tellraw @s ["",{"text":"  Type ","color":"gray"},{"text":"/trigger show_guide","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger show_guide"},"hoverEvent":{"action":"show_text","contents":"Click to re-open guide"}},{"text":" anytime in chat to re-open this guide!","color":"gray"}]
-tellraw @s {"text":"==================================================","color":"gold","bold":true}
+tellraw @s {"text":"=== Welcome to Hustisya Para Kay Rene SMP! ===","color":"gold","bold":true}
+tellraw @s ["",{"text":"Commands: ","color":"yellow","bold":true},{"text":"[Skin] ","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/skin set "},"hoverEvent":{"action":"show_text","value":"Click to set skin (/skin set)"}},{"text":"| ","color":"gray"},{"text":"[Nick/Color] ","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/nick set &a"},"hoverEvent":{"action":"show_text","value":"Click to set name color (/nick set)"}},{"text":"| Graves (30m) | Tree Harvester | 1-Player Sleep","color":"gray"}]
+tellraw @s ["",{"text":"Controls: ","color":"yellow","bold":true},{"text":"[J] Map | [B] Waypoint | [G] Fullbright | [C] Zoom | [F4] Freecam | [V] Voice | Shulker Inventory Open","color":"gray"}]
+tellraw @s ["",{"text":"Type ","color":"gray"},{"text":"/trigger show_guide","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger show_guide"},"hoverEvent":{"action":"show_text","value":"Click to re-open guide"}},{"text":" anytime to re-open this guide.","color":"gray"}]
 scoreboard players reset @s show_guide
 advancement revoke @s only server_guide:player_joined
 '@
