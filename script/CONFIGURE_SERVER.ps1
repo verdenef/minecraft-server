@@ -304,6 +304,7 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
 $loadMc = @'
 scoreboard objectives add show_guide trigger "Show Server Guide"
+scoreboard objectives add has_seen_guide dummy "Has Seen Guide"
 scoreboard objectives add guide_timer dummy "Guide Timer"
 scoreboard objectives add tip_index dummy "Tip Index"
 tellraw @a [{"text":"[Server] ","color":"gold","bold":true},{"text":"Interactive Welcome Guide & 5-Min Tip Broadcaster Loaded!","color":"green"}]
@@ -312,6 +313,7 @@ tellraw @a [{"text":"[Server] ","color":"gold","bold":true},{"text":"Interactive
 
 $tickMc = @'
 scoreboard players enable @a show_guide
+execute as @a[scores={has_seen_guide=0}] run function server_guide:send_guide
 execute as @a[scores={show_guide=1..}] run function server_guide:send_guide
 
 scoreboard players add #server guide_timer 1
@@ -349,24 +351,10 @@ tellraw @s {"text":"=== Welcome to Hustisya Para Kay Rene SMP! ===","color":"gol
 tellraw @s ["",{"text":"Commands: ","color":"yellow","bold":true},{"text":"[Skin] ","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/skin set "},"hoverEvent":{"action":"show_text","value":"Click to set skin (/skin set)"}},{"text":"| ","color":"gray"},{"text":"[Nick/Color] ","color":"green","bold":true,"clickEvent":{"action":"suggest_command","value":"/nick set &a"},"hoverEvent":{"action":"show_text","value":"Click to set name color (/nick set)"}},{"text":"| Graves (30m) | Tree Harvester | 1-Player Sleep","color":"gray"}]
 tellraw @s ["",{"text":"Controls: ","color":"yellow","bold":true},{"text":"[J] Map | [B] Waypoint | [G] Fullbright | [C] Zoom | [F4] Freecam | [V] Voice | Shulker Inventory Open","color":"gray"}]
 tellraw @s ["",{"text":"Type ","color":"gray"},{"text":"/trigger show_guide","color":"aqua","bold":true,"clickEvent":{"action":"run_command","value":"/trigger show_guide"},"hoverEvent":{"action":"show_text","value":"Click to re-open guide"}},{"text":" anytime to re-open this guide.","color":"gray"}]
+scoreboard players set @s has_seen_guide 1
 scoreboard players reset @s show_guide
-advancement revoke @s only server_guide:player_joined
 '@
 [System.IO.File]::WriteAllText((Join-Path -Path $dpData -ChildPath "server_guide\function\send_guide.mcfunction"), $sendGuideMc, $utf8NoBom)
-
-$playerJoinedAdv = @'
-{
-  "criteria": {
-    "requirement": {
-      "trigger": "minecraft:tick"
-    }
-  },
-  "rewards": {
-    "function": "server_guide:send_guide"
-  }
-}
-'@
-[System.IO.File]::WriteAllText((Join-Path -Path $dpData -ChildPath "server_guide\advancement\player_joined.json"), $playerJoinedAdv, $utf8NoBom)
 
 Write-Host " -> Interactive Welcome Guide Datapack installed & configured (UTF-8 No BOM)!" -ForegroundColor Green
 
