@@ -615,20 +615,20 @@ while ($true) {
                     "entity_model_features" = "entity-model-features"
                     "entity_texture_features" = "entitytexturefeatures"
                     "buildguide" = "build-guide"
-                    "horsestatsmod" = "curseforge:409126"
+                    "horsestatsmod" = "horse-stats-mod"
                     "horseexpert" = "horse-expert"
-                    "seethroughlava" = "curseforge:460519"
-                    "autoreconnectrf" = "curseforge:1049892"
-                    "elytra-chestplate-swapper" = "curseforge:473125"
+                    "seethroughlava" = "see-through-water-lava"
+                    "autoreconnectrf" = "autoreconnect-fabric"
+                    "elytra-chestplate-swapper" = "elytra-chestplate-swapper"
                     "infinitetrading" = "infinite-trading"
                     "justzoom" = "just-zoom"
-                    "spear_boost" = "curseforge:1526956"
-                    "betteranimationscollection" = "curseforge:323976"
+                    "spear_boost" = "spear-boost"
+                    "betteranimationscollection" = "better-animations-collection"
                     "invsearch_storage_indexer" = "invsearch"
                     "customskinloader-bootstrap" = "customskinloader"
                     "cyclepaintings" = "c85whkNB"
-                    "autoclicker" = "curseforge:445095"
-                    "punchy" = "curseforge:1374153"
+                    "autoclicker" = "auto-clicker"
+                    "punchy" = "punchy"
                 }
                 
                 $manifestMods = @()
@@ -743,6 +743,8 @@ while ($true) {
                                 }
                             }
                             
+                            $allAddedSlugs = @($toAddModrinth) + @($toAddCurseForge)
+                            
                             if ($toAddModrinth.Count -gt 0) {
                                 Write-Host "[*] Registering $($toAddModrinth.Count) Modrinth project slugs to profile '$script:ActiveProfile'..." -ForegroundColor Cyan
                                 & $script:FeriumExe add modrinth $toAddModrinth 2>&1 | Out-Null
@@ -751,6 +753,18 @@ while ($true) {
                             if ($toAddCurseForge.Count -gt 0) {
                                 Write-Host "[*] Registering $($toAddCurseForge.Count) CurseForge project IDs to profile '$script:ActiveProfile'..." -ForegroundColor Cyan
                                 & $script:FeriumExe add curseforge $toAddCurseForge 2>&1 | Out-Null
+                            }
+                            
+                            # Permanently persist registered mods to server-mods.txt so they never disappear even if session is interrupted
+                            $manifestFile = Join-Path -Path $script:PSScriptRoot -ChildPath "server-mods.txt"
+                            if (Test-Path -Path $manifestFile) {
+                                $existingManifest = Get-Content -Path $manifestFile
+                                foreach ($slugToAdd in $allAddedSlugs) {
+                                    if ($existingManifest -notcontains $slugToAdd) {
+                                        Add-Content -Path $manifestFile -Value $slugToAdd
+                                    }
+                                }
+                                Write-Host "[MANIFEST] Saved registered mods to server-mods.txt manifest on disk!" -ForegroundColor Green
                             }
                             
                             Write-Host "[SUCCESS] Added untracked mod(s) to profile '$script:ActiveProfile'!" -ForegroundColor Green
