@@ -4,12 +4,12 @@ script/config.json
 *.json.local
 script/server-only-mods.txt
 
-# Ignored scripts and docs
+# Ignored scripts, docs, and scratch
 script/CONFIGURE_SERVER.ps1
 script/RESET_WORLD.ps1
 docs/
 scratch/
-*.exe
 
-# SDD scratch and temp workspaces
+# Agent skills and SDD temp workspaces
+.agents/
 .superpowers/
