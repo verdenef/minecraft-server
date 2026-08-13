@@ -568,7 +568,7 @@ while ($true) {
                         $autoAdd = (Read-Host "`nWould you like to register untracked mod IDs to profile '$script:ActiveProfile'? (y/n)").Trim().ToLower()
                         if ($autoAdd -eq 'y' -or $autoAdd -eq 'yes') {
                             $aliasMap = @{
-                                "voicechat" = "voice-chat"
+                                "voicechat" = "simple-voice-chat"
                                 "roughlyenoughitems" = "rei"
                                 "easyshulkerboxes" = "easy-shulker-boxes"
                                 "inventoryprofilesnext" = "inventory-profiles-next"
@@ -582,15 +582,19 @@ while ($true) {
                                 "forgeconfigapiport" = "forge-config-api-port"
                                 "elytratrims" = "elytra-trims"
                                 "entity_model_features" = "entity-model-features"
-                                "entity_texture_features" = "entity-texture-features"
+                                "entity_texture_features" = "entitytexturefeatures"
                                 "buildguide" = "build-guide"
                                 "horsestatsmod" = "horse-statistics"
                                 "horseexpert" = "horse-expert"
                                 "seethroughlava" = "see-through-waterlava"
                                 "justzoom" = "just-zoom"
-                                "spear_boost" = "spear-boost"
+                                "spear_boost" = "curseforge:1526956"
+                                "betteranimationscollection" = "curseforge:323976"
                                 "invsearch_storage_indexer" = "invsearch"
-                                "customskinloader-bootstrap" = "custom-skin-loader"
+                                "customskinloader-bootstrap" = "customskinloader"
+                                "cyclepaintings" = "c85whkNB"
+                                "autoclicker" = "curseforge:445095"
+                                "punchy" = "curseforge:1374153"
                             }
                             
                             $toAdd = @()
