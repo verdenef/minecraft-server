@@ -161,11 +161,6 @@ function Ensure-FeriumProfile {
     }
 }
 
-Get-ScriptConfig
-
-# Configurable remote manifest URL (e.g. GitHub Gist raw URL)
-$script:ManifestUrl = ""
-
 # Set preference to Continue so PowerShell doesn't crash on standard CLI errors
 $ErrorActionPreference = "Continue"
 
@@ -197,7 +192,9 @@ function Ensure-FeriumInstalled {
     }
 }
 
+# Ensure Ferium binary is downloaded and ready BEFORE configuring profiles
 Ensure-FeriumInstalled
+Get-ScriptConfig
 
 function Get-ModManifest {
     param (
