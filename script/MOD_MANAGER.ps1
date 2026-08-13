@@ -35,13 +35,14 @@ $script:FeriumExe = Get-FeriumExePath
 function Get-ScriptConfig {
     $script:ConfigPath = "config.json"
     if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
-        $candidate = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
-        if (Test-Path -Path $candidate) {
-            $script:ConfigPath = $candidate
-        } elseif (Test-Path -Path (Join-Path -Path $PSScriptRoot -ChildPath "..\config.json")) {
-            $script:ConfigPath = Join-Path -Path $PSScriptRoot -ChildPath "..\config.json"
+        $rootConfig = Join-Path -Path $PSScriptRoot -ChildPath "..\config.json"
+        $localConfig = Join-Path -Path $PSScriptRoot -ChildPath "config.json"
+        if (Test-Path -Path $rootConfig) {
+            $script:ConfigPath = (Resolve-Path -Path $rootConfig).Path
+        } elseif (Test-Path -Path $localConfig) {
+            $script:ConfigPath = (Resolve-Path -Path $localConfig).Path
         } else {
-            $script:ConfigPath = $candidate
+            $script:ConfigPath = $rootConfig
         }
     }
     
@@ -172,17 +173,6 @@ function Initialize-FeriumProfile {
     }
     
     & $script:FeriumExe profile configure --output-dir "$script:MinecraftMods" --mod-loader $script:ActiveModLoader --game-version $script:ActiveMcVersion | Out-Null
-    
-    # Auto-purge unauthenticated CurseForge entries that cause Ferium upgrade socket hangs
-    $listOutput = & $script:FeriumExe list 2>&1 | Out-String
-    $cfMatches = [regex]::Matches($listOutput, '(?m)^\s*CF\s+(\d+)\s+')
-    if ($cfMatches.Count -gt 0) {
-        Write-Host "[*] Cleaning $($cfMatches.Count) unauthenticated CurseForge entries to prevent API hangs..." -ForegroundColor Yellow
-        foreach ($match in $cfMatches) {
-            $cfId = $match.Groups[1].Value
-            & $script:FeriumExe remove $cfId 2>&1 | Out-Null
-        }
-    }
 }
 
 # Set preference to Continue so PowerShell doesn't crash on standard CLI errors
@@ -269,9 +259,17 @@ function Get-ModManifest {
         }
     }
     
+    if (-not $script:ManifestHints) {
+        $script:ManifestHints = @{}
+    }
+
     $mods = $content -split '[\r\n]+' | ForEach-Object { 
-        $clean = ($_ -split '#')[0].Trim()
+        $parts = $_ -split '#'
+        $clean = $parts[0].Trim()
         if (-not [string]::IsNullOrWhiteSpace($clean)) {
+            if ($parts.Length -gt 1) {
+                $script:ManifestHints[$clean] = $parts[1].Trim()
+            }
             $clean
         }
     }
@@ -333,37 +331,7 @@ function Sync-ServerMods {
         return
     }
     
-    # Fast local cache sync from server mods directory if available
-    $serverModsDir = "D:\Games\minecraft-server\mods"
-    if ((Test-Path -Path $serverModsDir) -and ($serverModsDir -ne $script:MinecraftMods)) {
-        Write-Host "[*] Fast-syncing cached mod jars from $serverModsDir to $script:MinecraftMods..." -ForegroundColor Yellow
-        $serverOnlyList = Get-ModManifest -FileName "server-only-mods.txt"
-        $isServer = ($script:ActiveProfile -eq "server" -or $script:ActiveProfile -like "*server*" -or $script:MinecraftMods -like "*minecraft-server*")
-        
-        $jars = Get-ChildItem -Path $serverModsDir -Filter "*.jar" -File
-        $copiedCount = 0
-        foreach ($jar in $jars) {
-            $isServerOnly = $false
-            if (-not $isServer) {
-                foreach ($soMod in $serverOnlyList) {
-                    if ($jar.Name -like "*$soMod*") {
-                        $isServerOnly = $true
-                        break
-                    }
-                }
-            }
-            if (-not $isServerOnly) {
-                $dest = Join-Path -Path $script:MinecraftMods -ChildPath $jar.Name
-                if (-not (Test-Path -Path $dest)) {
-                    Copy-Item -Path $jar.FullName -Destination $dest -Force
-                    $copiedCount++
-                }
-            }
-        }
-        if ($copiedCount -gt 0) {
-            Write-Host "[FAST-SYNC] Instantly mirrored $copiedCount mod jar files to $script:MinecraftMods!" -ForegroundColor Green
-        }
-    }
+
     
     Write-Host "[*] Registering $($mods.Count) mods into Ferium profile..." -ForegroundColor Cyan
     $profileList = & $script:FeriumExe list 2>&1 | Out-String
@@ -398,26 +366,126 @@ function Sync-ServerMods {
         Write-Host "[*] All $($mods.Count) manifest mods are already registered in Ferium profile!" -ForegroundColor Green
     }
     
+    # Fetch resolved names from Ferium profile (to handle modrinth aliases like mOgUt4GM -> Mod Menu)
+    $profileListOutput = & $script:FeriumExe list 2>&1 | Out-String
+    $idToName = @{}
+    foreach ($line in ($profileListOutput -split '\r?\n')) {
+        if ($line -match '^\s*(?:MR|CF)\s+([A-Za-z0-9_-]+)\s+(.*?)\s*(?:\[.*\])?$') {
+            $id = $matches[1]
+            $name = $matches[2]
+            $idToName[$id] = $name
+        }
+    }
+
+    # Smart Fast local cache sync from server mods directory
+    $serverModsDir = "D:\Games\minecraft-server\mods"
+    if ((Test-Path -Path $serverModsDir) -and ($serverModsDir -ne $script:MinecraftMods)) {
+        Write-Host "[*] Fast-syncing matched mod jars from $serverModsDir to $script:MinecraftMods..." -ForegroundColor Yellow
+        $serverJars = Get-ChildItem -Path $serverModsDir -Filter "*.jar" -File
+        $copiedCount = 0
+        foreach ($m in $mods) {
+            $searchTerms = @($m)
+            if ($idToName.ContainsKey($m)) {
+                $searchTerms += $idToName[$m]
+                $cleanName = ($idToName[$m] -replace '[\s\-/_()\[\]]+', '').ToLower()
+                $searchTerms += $cleanName
+            }
+            if ($script:ManifestHints -and $script:ManifestHints.ContainsKey($m)) {
+                $hint = $script:ManifestHints[$m]
+                $searchTerms += $hint
+                $cleanHint = ($hint -replace '[\s\-/_()\[\]]+', '').ToLower()
+                $searchTerms += $cleanHint
+            }
+            $fastSyncAliases = @{
+                "architectury-api" = "architectury"
+                "yacl" = "yet-another-config-lib"
+                "simple-voice-chat" = "voicechat"
+                "rei" = "roughlyenoughitems"
+            }
+            if ($fastSyncAliases.ContainsKey($m)) {
+                $searchTerms += $fastSyncAliases[$m]
+            }
+            
+            $matchedJar = $null
+            foreach ($term in $searchTerms) {
+                $normTerm = ($term -replace '[\s\-/_()\[\]]+', '').ToLower()
+                if ($normTerm.Length -lt 3 -and $normTerm -ne $m) { continue }
+                
+                foreach ($j in $serverJars) {
+                    $normJ = ($j.Name -replace '[\s\-/_()\[\]]+', '').ToLower()
+                    if ($normJ.Contains($normTerm) -or $j.Name -like "*$term*") {
+                        $matchedJar = $j
+                        break
+                    }
+                }
+                if ($matchedJar) { break }
+            }
+            
+            if ($matchedJar) {
+                $dest = Join-Path -Path $script:MinecraftMods -ChildPath $matchedJar.Name
+                if (-not (Test-Path -Path $dest)) {
+                    Copy-Item -Path $matchedJar.FullName -Destination $dest -Force
+                    $copiedCount++
+                }
+            }
+        }
+        if ($copiedCount -gt 0) {
+            Write-Host "[FAST-SYNC] Instantly mirrored $copiedCount matched mod jar files from cache!" -ForegroundColor Green
+        }
+    }
+
     # Check if all required mod binaries are already present in target directory
     $existingJars = Get-ChildItem -Path $script:MinecraftMods -Filter "*.jar" -File | Select-Object -ExpandProperty Name
     $missingMods = @()
     foreach ($m in $mods) {
         $found = $false
-        $normM = ($m -replace '[\s\-/_()]+', '').ToLower()
-        foreach ($j in $existingJars) {
-            $normJ = ($j -replace '[\s\-/_()]+', '').ToLower()
-            if ($normJ.Contains($normM) -or $j -like "*$m*") {
-                $found = $true
-                break
-            }
+        
+        $searchTerms = @($m)
+        if ($idToName.ContainsKey($m)) {
+            $searchTerms += $idToName[$m]
+            $cleanName = ($idToName[$m] -replace '[\s\-/_()\[\]]+', '').ToLower()
+            $searchTerms += $cleanName
         }
+        if ($script:ManifestHints -and $script:ManifestHints.ContainsKey($m)) {
+            $hint = $script:ManifestHints[$m]
+            $searchTerms += $hint
+            $cleanHint = ($hint -replace '[\s\-/_()\[\]]+', '').ToLower()
+            $searchTerms += $cleanHint
+        }
+        
+        # Hardcoded aliases for known Modrinth slugs that have radically different jar names
+        $fastSyncAliases = @{
+            "architectury-api" = "architectury"
+            "yacl" = "yet-another-config-lib"
+            "simple-voice-chat" = "voicechat"
+            "rei" = "roughlyenoughitems"
+        }
+        if ($fastSyncAliases.ContainsKey($m)) {
+            $searchTerms += $fastSyncAliases[$m]
+        }
+        
+        foreach ($term in $searchTerms) {
+            $normTerm = ($term -replace '[\s\-/_()\[\]]+', '').ToLower()
+            if ($normTerm.Length -lt 3 -and $normTerm -ne $m) { continue }
+            
+            foreach ($j in $existingJars) {
+                $normJ = ($j -replace '[\s\-/_()\[\]]+', '').ToLower()
+                if ($normJ.Contains($normTerm) -or $j -like "*$term*") {
+                    $found = $true
+                    break
+                }
+            }
+            if ($found) { break }
+        }
+        
         if (-not $found) {
             $missingMods += $m
         }
     }
 
     if ($missingMods.Count -gt 0) {
-        Write-Host "`n[*] Missing $($missingMods.Count) mod binary files. Pulling via Ferium network API..." -ForegroundColor Cyan
+        Write-Host "`n[*] Missing $($missingMods.Count) mod binary files: $($missingMods -join ', ')" -ForegroundColor Cyan
+        Write-Host "[*] Pulling via Ferium network API..." -ForegroundColor Cyan
         & $script:FeriumExe upgrade
     } else {
         Write-Host "`n[FAST-SYNC] All $($mods.Count) mod binaries are verified present in $script:MinecraftMods!" -ForegroundColor Green
@@ -457,6 +525,8 @@ Set-Location -Path $script:FeriumDir
 
 # 2. Main Execution Loop
 while ($true) {
+    Get-ScriptConfig
+    Initialize-FeriumProfile
     Clear-Host
     Write-Host "==========================================" -ForegroundColor Cyan
     Write-Host "         Ferium Minecraft Mod Manager" -ForegroundColor Cyan
