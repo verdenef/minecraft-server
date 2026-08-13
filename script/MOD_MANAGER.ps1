@@ -597,18 +597,35 @@ while ($true) {
                                 "punchy" = "curseforge:1374153"
                             }
                             
-                            $toAdd = @()
+                            $toAddModrinth = @()
+                            $toAddCurseForge = @()
+                            
                             foreach ($uJar in ($untrackedJars | Where-Object { $_.ID -ne "Unknown" })) {
                                 $rawId = $uJar.ID
                                 $slug = if ($aliasMap.ContainsKey($rawId)) { $aliasMap[$rawId] } else { $rawId.Replace('_', '-') }
-                                $toAdd += $slug
+                                
+                                if ($slug -like "curseforge:*") {
+                                    $cfId = ($slug -split ':')[1]
+                                    $toAddCurseForge += $cfId
+                                } elseif ($slug -like "cf:*") {
+                                    $cfId = ($slug -split ':')[1]
+                                    $toAddCurseForge += $cfId
+                                } else {
+                                    $toAddModrinth += $slug
+                                }
                             }
                             
-                            if ($toAdd.Count -gt 0) {
-                                Write-Host "[*] Registering $($toAdd.Count) Modrinth project slugs to profile '$script:ActiveProfile'..." -ForegroundColor Cyan
-                                & $script:FeriumExe add $toAdd
-                                Write-Host "[SUCCESS] Added untracked mod(s) to profile '$script:ActiveProfile'!" -ForegroundColor Green
+                            if ($toAddModrinth.Count -gt 0) {
+                                Write-Host "[*] Registering $($toAddModrinth.Count) Modrinth project slugs to profile '$script:ActiveProfile'..." -ForegroundColor Cyan
+                                & $script:FeriumExe add modrinth $toAddModrinth 2>&1 | Out-Null
                             }
+                            
+                            if ($toAddCurseForge.Count -gt 0) {
+                                Write-Host "[*] Registering $($toAddCurseForge.Count) CurseForge project IDs to profile '$script:ActiveProfile'..." -ForegroundColor Cyan
+                                & $script:FeriumExe add curseforge $toAddCurseForge 2>&1 | Out-Null
+                            }
+                            
+                            Write-Host "[SUCCESS] Added untracked mod(s) to profile '$script:ActiveProfile'!" -ForegroundColor Green
                         }
                     }
                 }
