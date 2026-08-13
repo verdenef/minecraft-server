@@ -148,6 +148,17 @@ function Ensure-FeriumProfile {
     }
     
     & $script:FeriumExe profile configure --output-dir "$script:MinecraftMods" --mod-loader $script:ActiveModLoader --game-version $script:ActiveMcVersion | Out-Null
+    
+    # Auto-purge unauthenticated CurseForge entries that cause Ferium upgrade socket hangs
+    $listOutput = & $script:FeriumExe list 2>&1 | Out-String
+    $cfMatches = [regex]::Matches($listOutput, '(?m)^\s*CF\s+(\d+)\s+')
+    if ($cfMatches.Count -gt 0) {
+        Write-Host "[*] Cleaning $($cfMatches.Count) unauthenticated CurseForge entries to prevent API hangs..." -ForegroundColor Yellow
+        foreach ($match in $cfMatches) {
+            $cfId = $match.Groups[1].Value
+            & $script:FeriumExe remove $cfId 2>&1 | Out-Null
+        }
+    }
 }
 
 Get-ScriptConfig
