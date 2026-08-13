@@ -272,6 +272,37 @@ function Get-ModManifest {
     return $mods
 }
 
+function Protect-SodiumCompatibility {
+    if (-not (Test-Path -Path $script:MinecraftMods)) {
+        return
+    }
+
+    # Remove sodium from Ferium auto-upgrade to prevent downloading broken 0.9.2-alpha builds
+    & $script:FeriumExe remove sodium 2>&1 | Out-Null
+    & $script:FeriumExe remove AANobbMI 2>&1 | Out-Null
+
+    # Post-sync Iris-Sodium compatibility guard:
+    # Iris 1.11.2 requires stable Sodium 0.9.1+mc26.2 (0.9.2-alpha is incompatible with Iris 1.11.2)
+    Get-ChildItem -Path $script:MinecraftMods -Filter "sodium-fabric-0.9.2-alpha*.jar" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    $stableTarget = Join-Path -Path $script:MinecraftMods -ChildPath "sodium-fabric-0.9.1+mc26.2.jar"
+    if (-not (Test-Path -Path $stableTarget)) {
+        $cachedSodium = "D:\Games\minecraft-server\mods\sodium-fabric-0.9.1+mc26.2.jar"
+        if (Test-Path -Path $cachedSodium) {
+            Copy-Item -Path $cachedSodium -Destination $stableTarget -Force
+            Write-Host "[*] Pinned stable Sodium 0.9.1+mc26.2 from local cache for Iris compatibility." -ForegroundColor Green
+        } else {
+            Write-Host "[*] Pinning Sodium to stable version 0.9.1+mc26.2 for Iris compatibility..." -ForegroundColor Yellow
+            try {
+                [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                Invoke-WebRequest -Uri "https://cdn.modrinth.com/data/AANobbMI/versions/2Yom1N68/sodium-fabric-0.9.1%2Bmc26.2.jar" -OutFile $stableTarget
+                Write-Host "[SUCCESS] Downloaded stable Sodium 0.9.1+mc26.2!" -ForegroundColor Green
+            } catch {
+                Write-Host "[WARNING] Could not download Sodium 0.9.1+mc26.2: $_" -ForegroundColor Yellow
+            }
+        }
+    }
+}
+
 function Sync-ServerMods {
     Ensure-FeriumProfile
     
@@ -342,8 +373,7 @@ function Sync-ServerMods {
         }
     }
     
-    # Remove sodium from Ferium auto-upgrade to prevent downloading broken 0.9.2-alpha builds
-    & $script:FeriumExe remove sodium 2>&1 | Out-Null
+    Protect-SodiumCompatibility
     
     # Batch register all mods in a single process execution
     & $script:FeriumExe add $mods 2>&1 | Out-Null
@@ -351,15 +381,7 @@ function Sync-ServerMods {
     Write-Host "`n[*] Pulling mod binaries to $script:MinecraftMods..." -ForegroundColor Cyan
     & $script:FeriumExe upgrade
     
-    # Post-sync Iris-Sodium compatibility guard:
-    # Iris 1.11.2 requires stable Sodium 0.9.1+mc26.2 (0.9.2-alpha is incompatible with Iris 1.11.2)
-    Get-ChildItem -Path $script:MinecraftMods -Filter "sodium-fabric-0.9.2-alpha*.jar" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
-    $stableTarget = Join-Path -Path $script:MinecraftMods -ChildPath "sodium-fabric-0.9.1+mc26.2.jar"
-    if (-not (Test-Path -Path $stableTarget)) {
-        Write-Host "[*] Pinning Sodium to stable version 0.9.1+mc26.2 for Iris compatibility..." -ForegroundColor Yellow
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-WebRequest -Uri "https://cdn.modrinth.com/data/AANobbMI/versions/2Yom1N68/sodium-fabric-0.9.1%2Bmc26.2.jar" -OutFile $stableTarget
-    }
+    Protect-SodiumCompatibility
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host "`n[SUCCESS] Server mods successfully synchronized to $script:MinecraftMods!" -ForegroundColor Green
@@ -427,7 +449,9 @@ while ($true) {
         }
         "3" {
             Write-Host "`n[*] Checking for mod updates for profile [$script:ActiveProfile]..." -ForegroundColor Cyan
+            Protect-SodiumCompatibility
             & $script:FeriumExe upgrade
+            Protect-SodiumCompatibility
             
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "`n[SUCCESS] Mods synchronized successfully to $script:MinecraftMods!" -ForegroundColor Green
@@ -465,7 +489,9 @@ while ($true) {
                     & $script:FeriumExe add $mod
                 }
                 Write-Host "`n[*] Triggering upgrade cycle to pull binaries..." -ForegroundColor Cyan
+                Protect-SodiumCompatibility
                 & $script:FeriumExe upgrade
+                Protect-SodiumCompatibility
                 
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "`n[SUCCESS] Added and downloaded binaries for '$inputString'." -ForegroundColor Green
@@ -508,7 +534,9 @@ while ($true) {
                 }
 
                 Write-Host "`n[*] Pulling modpack components..." -ForegroundColor Cyan
+                Protect-SodiumCompatibility
                 & $script:FeriumExe modpack upgrade
+                Protect-SodiumCompatibility
                 
                 if ($LASTEXITCODE -eq 0) {
                     Write-Host "`n[SUCCESS] Modpack successfully configured and installed directly to root!" -ForegroundColor Green
