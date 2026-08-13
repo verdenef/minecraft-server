@@ -539,15 +539,31 @@ while ($true) {
                             $zip.Dispose()
                         } catch {}
                         
+                        $slug = if ($modId -and $aliasMap.ContainsKey($modId)) { $aliasMap[$modId] } else { if ($modId) { $modId.Replace('_', '-') } else { $null } }
+                        
                         $isTracked = $false
+                        $checkTerms = @($modId, $slug, $modName, $jar.BaseName) | Where-Object { $_ }
+                        
+                        # 1. Check against manifest lists (server-mods.txt / server-only-mods.txt)
                         foreach ($tm in $manifestMods) {
-                            if (($modId -and $modId -eq $tm) -or ($jar.Name -like "*$tm*")) {
-                                $isTracked = $true
-                                break
+                            foreach ($term in $checkTerms) {
+                                if ($term -eq $tm -or $jar.Name -like "*$tm*") {
+                                    $isTracked = $true
+                                    break
+                                }
                             }
+                            if ($isTracked) { break }
                         }
-                        if (-not $isTracked -and $modId -and ($profileList -match "\b$modId\b")) {
-                            $isTracked = $true
+                        
+                        # 2. Check against Ferium active profile list
+                        if (-not $isTracked) {
+                            foreach ($term in $checkTerms) {
+                                $escaped = [regex]::Escape($term)
+                                if ($profileList -match "(?i)$escaped") {
+                                    $isTracked = $true
+                                    break
+                                }
+                            }
                         }
                         
                         if (-not $isTracked) {
