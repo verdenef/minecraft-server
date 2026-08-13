@@ -11,8 +11,26 @@
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 # 1. Environment Setup & Validation
+function Get-FeriumExePath {
+    $candidates = @()
+    if (-not [string]::IsNullOrWhiteSpace($PSScriptRoot)) {
+        $candidates += Join-Path -Path $PSScriptRoot -ChildPath "..\ferium.exe"
+        $candidates += Join-Path -Path $PSScriptRoot -ChildPath "ferium.exe"
+    }
+    $candidates += Join-Path -Path (Get-Location).Path -ChildPath "ferium.exe"
+    $candidates += Join-Path -Path $env:LOCALAPPDATA -ChildPath "Ferium\ferium.exe"
+
+    foreach ($c in $candidates) {
+        if (Test-Path -Path $c) {
+            return (Resolve-Path -Path $c).Path
+        }
+    }
+    
+    return Join-Path -Path $env:LOCALAPPDATA -ChildPath "Ferium\ferium.exe"
+}
+
 $script:FeriumDir = Join-Path -Path $env:LOCALAPPDATA -ChildPath "Ferium"
-$script:FeriumExe = Join-Path -Path $script:FeriumDir -ChildPath "ferium.exe"
+$script:FeriumExe = Get-FeriumExePath
 
 function Get-ScriptConfig {
     $script:ConfigPath = "config.json"
@@ -165,30 +183,35 @@ function Ensure-FeriumProfile {
 $ErrorActionPreference = "Continue"
 
 function Ensure-FeriumInstalled {
-    if (-not (Test-Path -Path $script:FeriumExe)) {
-        Write-Host "`n[*] Ferium executable not found. Auto-downloading ferium.exe..." -ForegroundColor Yellow
-        if (-not (Test-Path -Path $script:FeriumDir)) {
-            New-Item -ItemType Directory -Path $script:FeriumDir -Force | Out-Null
-        }
+    $script:FeriumExe = Get-FeriumExePath
+    if (Test-Path -Path $script:FeriumExe) {
+        Write-Host "[*] Using Ferium executable: $script:FeriumExe" -ForegroundColor Gray
+        return
+    }
+    
+    Write-Host "`n[*] Ferium executable not found. Auto-downloading ferium.exe..." -ForegroundColor Yellow
+    if (-not (Test-Path -Path $script:FeriumDir)) {
+        New-Item -ItemType Directory -Path $script:FeriumDir -Force | Out-Null
+    }
+    
+    $zipUrl = "https://github.com/the-cursed-modpack/ferium/releases/latest/download/ferium-x86_64-pc-windows-msvc.zip"
+    $zipPath = Join-Path -Path $script:FeriumDir -ChildPath "ferium.zip"
+    
+    try {
+        Write-Host "[*] Downloading Ferium release from GitHub..." -ForegroundColor Cyan
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
         
-        $zipUrl = "https://github.com/the-cursed-modpack/ferium/releases/latest/download/ferium-x86_64-pc-windows-msvc.zip"
-        $zipPath = Join-Path -Path $script:FeriumDir -ChildPath "ferium.zip"
-        
-        try {
-            Write-Host "[*] Downloading Ferium release from GitHub..." -ForegroundColor Cyan
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-            Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing
-            
-            Write-Host "[*] Extracting Ferium..." -ForegroundColor Cyan
-            Expand-Archive -Path $zipPath -DestinationPath $script:FeriumDir -Force
-            Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
-            Write-Host "[SUCCESS] Ferium auto-installation complete!" -ForegroundColor Green
-        } catch {
-            Write-Host "[ERROR] Failed to auto-download Ferium: $_" -ForegroundColor Red
-            Write-Host "Please ensure an active internet connection or manually place ferium.exe in $script:FeriumDir" -ForegroundColor Red
-            Pause
-            exit 1
-        }
+        Write-Host "[*] Extracting Ferium..." -ForegroundColor Cyan
+        Expand-Archive -Path $zipPath -DestinationPath $script:FeriumDir -Force
+        Remove-Item -Path $zipPath -Force -ErrorAction SilentlyContinue
+        $script:FeriumExe = Get-FeriumExePath
+        Write-Host "[SUCCESS] Ferium auto-installation complete!" -ForegroundColor Green
+    } catch {
+        Write-Host "[ERROR] Failed to auto-download Ferium: $_" -ForegroundColor Red
+        Write-Host "Please ensure an active internet connection or manually place ferium.exe in repository root or $script:FeriumDir" -ForegroundColor Red
+        Pause
+        exit 1
     }
 }
 
